@@ -1,0 +1,41 @@
+{
+    "version": "1.0.0",
+    "title": "Example App",
+    "properties": {
+        "aspect": 20
+    },
+    "screens": {
+        "welcome": {
+            "type": "msgbox",
+            "title": "Welcome",
+            "properties": {
+                "text": "This is some welcome text for the dialog box. Press Enter to begin."
+            },
+            "next": "another"
+        },
+        "another": {
+            "type": "msgbox",
+            "title": "Another",
+            "properties": {
+                "text": "This is just another form box to demostrate things."
+            },
+            "next": "confirm"
+        },
+        "confirm": {
+            "type": "yesno",
+            "title": "Happy Confirmation",
+            "properties": {
+                "text": "Are you happy?"
+            }
+        },
+        "exit": {
+            "type": "yesno",
+            "title": "Exit",
+            "properties": {
+                "text": "Are you sure you want to exit?"
+            }
+        }
+    },
+    "start": "welcome",
+    "exit": "exit"
+}
