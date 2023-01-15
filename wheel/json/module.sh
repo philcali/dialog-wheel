@@ -18,6 +18,17 @@ function wheel::json::get_or_default() {
     fi
 }
 
+function wheel::json::validate() {
+    local input=$1
+    local msg; msg=$(echo "$input" | jq 2>&1)
+    # validation error code
+    if [ $? -eq 4 ]; then
+        echo "$msg"
+        return 1
+    fi
+    return 0
+}
+
 function wheel::json::read() {
     while read -r line
     do
