@@ -40,6 +40,21 @@ function wheel::screens::yesno() {
         "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
 }
 
+function wheel::screens::custom() {
+    local dialog_options
+    wheel::screens::set_dialog_options dialog_options
+    local entrypoint; entrypoint=$(wheel::json::get "$screen" "entrypoint")
+    if [ -z "$entrypoint" ] || [ "$entrypoint" = "null" ]; then
+        wheel::log::warn "Custom screen $CURRENT_SCREEN is missing 'entrypoint'"
+        dialog \
+            "${dialog_options[@]}" \
+            --msgbox \
+            "Could not invoke custom screen without an 'entrypoint' specified." "$screen_height" "$screen_width"
+    else
+        eval "$entrypoint"
+    fi
+}
+
 function wheel::screens::hub() {
     local dialog_options
     local menu_options
@@ -48,8 +63,8 @@ function wheel::screens::hub() {
     local old_ifs=$IFS
     IFS=$'\n'
     for item in $(wheel::json::get "$screen" "properties.items[]" "-c"); do
-        local item_name; item_name=$(echo "$item" | jq -r ".name")
-        local item_desc; item_desc=$(echo "$item" | jq -r ".description")
+        local item_name; item_name=$(wheel::json::get "$item" "name")
+        local item_desc; item_desc=$(wheel::json::get "$item" "description")
         menu_options+=("$item_name" "$item_desc")
     done
     IFS=$old_ifs

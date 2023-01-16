@@ -4,6 +4,12 @@
     "properties": {
         "aspect": 20
     },
+    "includes": [
+        {
+            "directory": "examples",
+            "file": "application.sh"
+        }
+    ],
     "screens": {
         "Welcome": {
             "type": "msgbox",
@@ -23,9 +29,32 @@
                     {
                         "name": "Happiness Level",
                         "description": "Asks if you are happy"
+                    },
+                    {
+                        "name": "Invoke Custom",
+                        "description": "Example of invoking a custom script"
+                    },
+                    {
+                        "name": "Missing Entry",
+                        "description": "Example of a custom screen missing properties"
                     }
                 ]
             }
+        },
+        "Invoke Custom": {
+            "type": "custom",
+            "entrypoint": "application::example::hello_world",
+            "properties": {
+                "text": "This is properties sent to custom function."
+            },
+            "next": "Main Menu"
+        },
+        "Missing Entry": {
+            "type": "custom",
+            "properties": {
+                "text": "This is properties sent to custom function."
+            },
+            "next": "Main Menu"
         },
         "Another": {
             "type": "msgbox",

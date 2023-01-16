@@ -46,7 +46,7 @@ function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
     while true; do
-        local screen; screen=$(echo "$json_source" | jq --arg screen "$CURRENT_SCREEN" '.screens[$screen]')
+        local screen; screen=$(wheel::json::get "$json_source" "screens[\$screen]" --arg screen "$CURRENT_SCREEN")
         if [ -z "$screen" ] || [ "$screen" = "null" ]; then
             break
         fi
@@ -95,6 +95,21 @@ function wheel::main_loop() {
     wheel::log::info "Exiting Dialog Loop"
 }
 
+function wheel::inclusion() {
+    local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]" "-c")
+    local inclusion
+    for inclusion in $inclusions; do
+        local file; file=$(wheel::json::get "$inclusion" "file")
+        local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
+        if [ ! -f "$directory/$file" ]; then
+            wheel::log::warn "Tried to include $directory/$file, but it does not exist"
+            continue
+        fi
+        # shellcheck source=examples/application.sh
+        . "$directory/$file"
+    done
+}
+
 function wheel::main() {
     local input_source="${INPUT_SOURCE:-/dev/stdin}"
     local json_source; json_source=$(wheel::json::read "$input_source")
@@ -106,13 +121,14 @@ function wheel::main() {
     wheel::events::set_traps
     local answer_file; answer_file=$(mktemp)
     wheel::events::add_clean_up "rm $answer_file"
-    local properties; properties=$(echo "$json_source" | jq '.properties')
+    wheel::inclusion
+    local properties; properties=$(wheel::json::get "$json_source" "properties")
     APP_HEIGHT=$(wheel::json::get_or_default "$properties" "height" "0")
     APP_WIDTH=$(wheel::json::get_or_default "$properties" "width" "0")
     APP_ASPECT=$(wheel::json::get_or_default "$properties" "aspect" "9")
-    APP_BACKTITLE=$(echo "$json_source" | jq -r '.title')
-    EXIT_SCREEN=$(echo "$json_source" | jq -r '.exit')
-    CURRENT_SCREEN=$(echo "$json_source" | jq -r '.start')
+    APP_BACKTITLE=$(wheel::json::get "$json_source" "title")
+    EXIT_SCREEN=$(wheel::json::get "$json_source" "exit")
+    CURRENT_SCREEN=$(wheel::json::get "$json_source" "start")
     wheel::log::debug "Application Height: $APP_HEIGHT"
     wheel::log::debug "Application Width: $APP_WIDTH"
     wheel::log::debug "Application Aspect Ratio: $APP_ASPECT"
