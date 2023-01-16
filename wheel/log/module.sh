@@ -25,7 +25,7 @@ function wheel::log::write() {
     shift
     local rest=("$@")
 
-    if [ $LOG_THRESHOLD -ge "$level" ]; then
+    if [ "$level" -ge "$LOG_THRESHOLD" ]; then
         echo "[${LOG_LEVELS_TO_LABEL[$level]}] $(date -u +%Y-%m-%dT%H:%M:%SZ) - ${rest[*]}" >> $LOG_FILE
     fi
 }

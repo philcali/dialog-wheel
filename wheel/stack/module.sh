@@ -20,6 +20,5 @@ function wheel::stack::clear() {
 }
 
 function wheel::stack::empty() {
-    test -z "${SCREEN_STACK[@]}"
-    return $?
+    [ -z "${SCREEN_STACK[*]}" ]
 }

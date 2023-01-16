@@ -9,6 +9,18 @@ function wheel::json::get() {
     echo "$map" | jq -r "${rest[@]}"
 }
 
+function wheel::json::is_null() {
+    [ -z "$1" ] || [ "$1" = "null" ]
+}
+
+function wheel::json::set() {
+    local map=$1
+    local key=$2
+    local value=$3
+
+    echo "$map" | jq --arg value "$value" ". | setpath(path(.$key); \$value)"
+}
+
 function wheel::json::get_or_default() {
     local map=$1
     local key=$2
@@ -17,7 +29,7 @@ function wheel::json::get_or_default() {
     shift
     shift
     local value; value=$(wheel::json::get "$map" "$key" "$@")
-    if [ "$value" = "null" ]; then
+    if  wheel::json::is_null "$value"; then
         echo "$default_value"
     else
         echo "$value"

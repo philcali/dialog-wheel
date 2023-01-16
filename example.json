@@ -13,6 +13,9 @@
     "screens": {
         "Welcome": {
             "type": "msgbox",
+            "dialog": {
+                "ok-label": "Continue"
+            },
             "properties": {
                 "text": "This is some welcome text for the dialog box. Press Enter to begin."
             },
@@ -20,8 +23,18 @@
         },
         "Main Menu": {
             "type": "hub",
+            "clear_history": true,
+            "dialog": {
+                "title": "Main Menu",
+                "ok-label": "Select",
+                "cancel-label": "Exit"
+            },
             "properties": {
                 "items": [
+                    {
+                        "name": "User Menu",
+                        "description": "Configure this user"
+                    },
                     {
                         "name": "Another",
                         "description": "Takes you to another page"
@@ -41,6 +54,59 @@
                 ]
             }
         },
+        "User Menu": {
+            "type": "hub",
+            "clear_history": true,
+            "dialog": {
+                "cancel-label": "Back"
+            },
+            "properties": {
+                "items": [
+                    {
+                        "name": "Name",
+                        "required": true,
+                        "configures": "name"
+                    },
+                    {
+                        "name": "Password",
+                        "required": true,
+                        "configures": "password"
+                    },
+                    {
+                        "name": "Birthday",
+                        "configures": "birthday"
+                    }
+                ]
+            },
+            "back": "Main Menu"
+        },
+        "Password": {
+            "type": "password",
+            "dialog": {
+                "insecure": true
+            },
+            "capture_into": "password",
+            "properties": {
+                "text": "Enter your password"
+            },
+            "next": "User Menu"
+        },
+        "Name": {
+            "type": "input",
+            "capture_into": "name",
+            "properties": {
+                "text": "Enter your name"
+            },
+            "next": "User Menu"
+        },
+        "Birthday": {
+            "type": "calendar",
+            "capture_into": "birthday",
+            "properties": {
+                "text": "Select your birth date"
+            },
+            "next": "User Menu"
+        },
         "Invoke Custom": {
             "type": "custom",
             "entrypoint": "application::example::hello_world",
@@ -58,7 +124,9 @@
         },
         "Another": {
             "type": "msgbox",
-            "title": "Another Page",
+            "dialog": {
+                "title": "Another Page"
+            },
             "properties": {
                 "text": "This is just another form box to demostrate things."
             },
@@ -66,14 +134,15 @@
         },
         "Happiness Level": {
             "type": "yesno",
-            "title": "Happy Confirmation",
+            "dialog": {
+                "title": "Happy Confirmation"
+            },
             "properties": {
                 "text": "Are you happy?"
             }
         },
         "Exit": {
             "type": "yesno",
-            "title": "Exit",
             "properties": {
                 "text": "Are you sure you want to exit?"
             }

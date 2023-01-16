@@ -7,6 +7,8 @@ DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/json/module.sh
 . "$DIR"/events/module.sh
 . "$DIR"/screens/module.sh
+. "$DIR"/state/module.sh
+. "$DIR"/utils/module.sh
 
 
 INPUT_SOURCE=""
@@ -22,6 +24,8 @@ function wheel::usage() {
     local exit_code=${1:-0}
     echo "Usage $(basename "$0") - v$VERSION: Invoke a dialog wheel"
     echo "Example usage: $(basename "$0") [-h] [-s workflow.json] [< workflow.json]"
+    echo "  -o: Supply an output path for configured JSON"
+    echo "  -d: Supply a JSON file representative of the workflow state data"
     echo "  -s: Supply a JSON file that represents the dialog flow"
     echo "  -l: Supply a log source (defaults to /dev/null)"
     echo "  -L: Supply a log level (defaults to INFO)"
@@ -30,10 +34,12 @@ function wheel::usage() {
 }
 
 function wheel::parse_args() {
-    while getopts "L:l:s:h" flag
+    while getopts "o:d:L:l:s:h" flag
     do
         case "${flag}" in
         s) INPUT_SOURCE="${OPTARG}";;
+        o) wheel::state::set_output "${OPTARG}";;
+        d) wheel::state::init "${OPTARG}";;
         l) wheel::log::set_file "${OPTARG}";;
         L) wheel::log::set_level "${OPTARG}";;
         h) wheel::usage 0;;
@@ -51,11 +57,13 @@ function wheel::main_loop() {
             break
         fi
         local next_screen; next_screen=$(wheel::json::get "$screen" "next")
+        local back_screen; back_screen=$(wheel::json::get "$screen" "back")
         local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
+        local capture_into; capture_into=$(wheel::json::get "$screen" "capture_into")
         local value
         wheel::log::debug "Displaying screen $CURRENT_SCREEN"
-        if [ "$dialog_type" = "hub" ] || [ "$clear_history" = "true" ]; then
+        if [ "$clear_history" = "true" ]; then
             wheel::stack::clear
         fi
         wheel::screens::new_screen "$screen" "$dialog_type" "$answer_file"
@@ -66,6 +74,9 @@ function wheel::main_loop() {
         ACTIVE_DIALOG=""
         value=$(cat "$answer_file")
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
+        if ! wheel::json::is_null "$capture_into"; then
+            wheel::state::set "$capture_into" "$value"
+        fi
         case $returncode in
         "$DIALOG_OK")
             if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
@@ -78,7 +89,11 @@ function wheel::main_loop() {
             ;;
         "$DIALOG_CANCEL")
             if wheel::stack::empty; then
-                wheel::stack::push "$EXIT_SCREEN"
+                local pushed_screen="$EXIT_SCREEN"
+                if ! wheel::json::is_null "$back_screen"; then
+                    pushed_screen="$back_screen"
+                fi
+                wheel::stack::push "$pushed_screen"
                 continue
             fi
             wheel::stack::pop
@@ -121,6 +136,7 @@ function wheel::main() {
     wheel::events::set_traps
     local answer_file; answer_file=$(mktemp)
     wheel::events::add_clean_up "rm $answer_file"
+    wheel::events::add_clean_up "wheel::state::flush"
     wheel::inclusion
     local properties; properties=$(wheel::json::get "$json_source" "properties")
     APP_HEIGHT=$(wheel::json::get_or_default "$properties" "height" "0")
