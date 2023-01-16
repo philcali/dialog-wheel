@@ -5,30 +5,44 @@
         "aspect": 20
     },
     "screens": {
-        "welcome": {
+        "Welcome": {
             "type": "msgbox",
-            "title": "Welcome",
             "properties": {
                 "text": "This is some welcome text for the dialog box. Press Enter to begin."
             },
-            "next": "another"
+            "next": "Main Menu"
         },
-        "another": {
+        "Main Menu": {
+            "type": "hub",
+            "properties": {
+                "items": [
+                    {
+                        "name": "Another",
+                        "description": "Takes you to another page"
+                    },
+                    {
+                        "name": "Happiness Level",
+                        "description": "Asks if you are happy"
+                    }
+                ]
+            }
+        },
+        "Another": {
             "type": "msgbox",
-            "title": "Another",
+            "title": "Another Page",
             "properties": {
                 "text": "This is just another form box to demostrate things."
             },
-            "next": "confirm"
+            "next": "Main Menu"
         },
-        "confirm": {
+        "Happiness Level": {
             "type": "yesno",
             "title": "Happy Confirmation",
             "properties": {
                 "text": "Are you happy?"
             }
         },
-        "exit": {
+        "Exit": {
             "type": "yesno",
             "title": "Exit",
             "properties": {
@@ -36,6 +50,6 @@
             }
         }
     },
-    "start": "welcome",
-    "exit": "exit"
+    "start": "Welcome",
+    "exit": "Exit"
 }

@@ -3,14 +3,20 @@
 function wheel::json::get() {
     local map=$1
     local key=$2
-    echo "$map" | jq -r ".$key"
+    shift
+    shift
+    local rest=("$@" ".$key")
+    echo "$map" | jq -r "${rest[@]}"
 }
 
 function wheel::json::get_or_default() {
     local map=$1
     local key=$2
     local default_value=$3
-    local value; value=$(wheel::json::get "$map" "$key")
+    shift
+    shift
+    shift
+    local value; value=$(wheel::json::get "$map" "$key" "$@")
     if [ "$value" = "null" ]; then
         echo "$default_value"
     else

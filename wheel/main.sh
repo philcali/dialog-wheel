@@ -46,28 +46,41 @@ function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
     while true; do
-        local screen; screen=$(echo "$json_source" | jq ".screens.$CURRENT_SCREEN")
+        local screen; screen=$(echo "$json_source" | jq --arg screen "$CURRENT_SCREEN" '.screens[$screen]')
         if [ -z "$screen" ] || [ "$screen" = "null" ]; then
             break
         fi
         local next_screen; next_screen=$(wheel::json::get "$screen" "next")
+        local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
+        local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
+        local value
         wheel::log::debug "Displaying screen $CURRENT_SCREEN"
-        exec 3>&1
-        wheel::screens::new_screen "$screen"
+        if [ "$dialog_type" = "hub" ] || [ "$clear_history" = "true" ]; then
+            wheel::stack::clear
+        fi
+        wheel::screens::new_screen "$screen" "$dialog_type" "$answer_file"
         # Allow trap
         ACTIVE_DIALOG=$!
         wait $ACTIVE_DIALOG
         returncode=$?
-        exec 3>&-
-        wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode"
+        ACTIVE_DIALOG=""
+        value=$(cat "$answer_file")
+        wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
         case $returncode in
         "$DIALOG_OK")
             if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
                 break
             fi
+            if [ "$dialog_type" = "hub" ] && [ -n "$value" ]; then
+                next_screen=$value
+            fi
             wheel::stack::push "$next_screen"
             ;;
         "$DIALOG_CANCEL")
+            if wheel::stack::empty; then
+                wheel::stack::push "$EXIT_SCREEN"
+                continue
+            fi
             wheel::stack::pop
             ;;
         "$DIALOG_ESC")
@@ -79,6 +92,7 @@ function wheel::main_loop() {
             ;;
         esac
     done
+    wheel::log::info "Exiting Dialog Loop"
 }
 
 function wheel::main() {
@@ -90,6 +104,8 @@ function wheel::main() {
         exit 1
     fi
     wheel::events::set_traps
+    local answer_file; answer_file=$(mktemp)
+    wheel::events::add_clean_up "rm $answer_file"
     local properties; properties=$(echo "$json_source" | jq '.properties')
     APP_HEIGHT=$(wheel::json::get_or_default "$properties" "height" "0")
     APP_WIDTH=$(wheel::json::get_or_default "$properties" "width" "0")
