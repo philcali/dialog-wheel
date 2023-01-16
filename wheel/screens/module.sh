@@ -51,7 +51,7 @@ function wheel::screens::custom() {
             --msgbox \
             "Could not invoke custom screen without an 'entrypoint' specified." "$screen_height" "$screen_width"
     else
-        eval "$entrypoint"
+        "$entrypoint"
     fi
 }
 
