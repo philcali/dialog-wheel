@@ -129,10 +129,45 @@ function wheel::screens::hub() {
     local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
     local menu_options
     wheel::screens::_parse_menu_options menu_options
-    wheel::log::debug "Menu options for $title: ${menu_options[*]}"
+    wheel::log::debug "Menu options for $CURRENT_SCREEN: ${menu_options[*]}"
     dialog \
         "${dialog_options[@]}" \
         --menu \
         "$(wheel::json::get_or_default "$screen" "properties.text" "Please select an option:")" "$screen_height" "$screen_width" "$menu_height" \
         "${menu_options[@]}"
+}
+
+function wheel::screens::gauge() {
+    local actions=()
+    mapfile -t actions < <(wheel::json::get "$screen" 'properties.actions[]')
+    wheel::log::debug "Found the actions ${actions[*]}"
+    if [ "$(wheel::json::get_or_default "$screen" "managed" "false")" = "true" ]; then
+        local total="${#actions[@]}"
+        local step=$((100/total))
+        (
+            for index in "${!actions[@]}"; do
+                local percentage=$((step * (index + 1)))
+                echo "XXX"
+                echo "$percentage"
+                wheel::log::info "Invoking gauge action ${actions[$index]}"
+                "${actions[$index]}"
+                echo "XXX"
+            done
+        ) |
+        dialog \
+            "${dialog_options[@]}" \
+            --gauge \
+            "$(wheel::json::get_or_default "$screen" "properties.text" "In progress. Please wait.")" "$screen_height" "$screen_width" 0
+    else
+        (
+            for action in "${actions[@]}"; do
+                wheel::log::info "Invoking gauge action $action"
+                "$action"
+            done
+        ) |
+        dialog \
+            "${dialog_options[@]}" \
+            --gauge \
+            "$(wheel::json::get_or_default "$screen" "properties.text" "In progress. Please wait.")" "$screen_height" "$screen_width" 0
+    fi
 }

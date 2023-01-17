@@ -36,6 +36,10 @@
                         "description": "Configure this user"
                     },
                     {
+                        "name": "Validate Menu",
+                        "description": "Validate things are working"
+                    },
+                    {
                         "name": "Another",
                         "description": "Takes you to another page"
                     },
@@ -106,6 +110,68 @@
                 "text": "Select your birth date"
             },
             "next": "User Menu"
+        },
+        "Validate Menu": {
+            "type": "hub",
+            "dialog": {
+                "cancel-label": "Back"
+            },
+            "clear_history": true,
+            "properties": {
+                "items": [
+                    {
+                        "name": "Validate",
+                        "description": "Run an external gauge program"
+                    },
+                    {
+                        "name": "Validate Managed",
+                        "description": "Run a managed gauge program"
+                    }
+                ]
+            },
+            "back": "Main Menu"
+        },
+        "Validate": {
+            "type": "gauge",
+            "dialog": {
+                "title": "Validating"
+            },
+            "properties": {
+                "text": "Starting the validation process. Please be patient",
+                "width": 70,
+                "actions": [
+                    "application::example::validate"
+                ]
+            },
+            "next":"Validation Result"
+        },
+        "Validate Managed": {
+            "type": "gauge",
+            "managed": true,
+            "dialog": {
+                "title": "Validating"
+            },
+            "properties": {
+                "width": 70,
+                "actions": [
+                    "application::example::step_one",
+                    "application::example::step_two",
+                    "application::example::step_three",
+                    "application::example::step_four",
+                    "application::example::step_five"
+                ]
+            },
+            "next": "Validation Result"
+        },
+        "Validation Result": {
+            "type": "msgbox",
+            "dialog": {
+                "ok-label": "Back"
+            },
+            "properties": {
+                "text": "Validation complete! Things look great!"
+            },
+            "next": "Validate Menu"
         },
         "Invoke Custom": {
             "type": "custom",
