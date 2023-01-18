@@ -11,9 +11,20 @@ DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/utils/module.sh
 
 
+# TODO: below
+# item_generator
+# checklist
+# radiolist
+# fselect
+# form
+# rangebox
+# state interpolation
+
 INPUT_SOURCE=""
 CURRENT_SCREEN=""
+# TODO: make defaults in the screen module
 EXIT_SCREEN=""
+ERROR_SCREEN=""
 
 APP_BACKTITLE=""
 APP_ASPECT=""
@@ -23,7 +34,7 @@ APP_HEIGHT=""
 function wheel::usage() {
     local exit_code=${1:-0}
     echo "Usage $(basename "$0") - v$VERSION: Invoke a dialog wheel"
-    echo "Example usage: $(basename "$0") [-h] [-s workflow.json] [< workflow.json]"
+    echo "Example usage: $(basename "$0") [-h] [-d state.json] [-o output.json] [-l app.log] [-L DEBUG|INFO|WARN|ERROR] [-s workflow.json] [< workflow.json]"
     echo "  -o: Supply an output path for configured JSON"
     echo "  -d: Supply a JSON file representative of the workflow state data"
     echo "  -s: Supply a JSON file that represents the dialog flow"
@@ -48,6 +59,29 @@ function wheel::parse_args() {
     done
 }
 
+# TODO: Perhaps we move this to a "handlers" module
+function wheel::ok_handler() {
+    if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
+        return 1
+    fi
+    if [ "$dialog_type" = "hub" ] && [ -n "$value" ]; then
+        next_screen=$value
+    fi
+    wheel::stack::push "$next_screen"
+}
+
+function wheel::cancel_handler() {
+    if wheel::stack::empty; then
+        local pushed_screen="$EXIT_SCREEN"
+        if ! wheel::json::is_null "$back_screen"; then
+            pushed_screen="$back_screen"
+        fi
+        wheel::stack::push "$pushed_screen"
+        return 0
+    fi
+    wheel::stack::pop
+}
+
 function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
@@ -60,7 +94,7 @@ function wheel::main_loop() {
         local back_screen; back_screen=$(wheel::json::get "$screen" "back")
         local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
-        local capture_into; capture_into=$(wheel::json::get "$screen" "capture_into")
+        local capture_into; capture_into=$(wheel::json::get_or_default "$screen" "capture_into" "")
         local value
         wheel::log::debug "Displaying screen $CURRENT_SCREEN"
         if [ "$clear_history" = "true" ]; then
@@ -74,29 +108,29 @@ function wheel::main_loop() {
         ACTIVE_DIALOG=""
         value=$(cat "$answer_file")
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
-        if ! wheel::json::is_null "$capture_into"; then
+        if [ -n "$capture_into" ]; then
             wheel::state::set "$capture_into" "$value"
         fi
         case $returncode in
         "$DIALOG_OK")
-            if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
+            local action; action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::ok_handler")
+            if ! $action; then
                 break
             fi
-            if [ "$dialog_type" = "hub" ] && [ -n "$value" ]; then
-                next_screen=$value
-            fi
-            wheel::stack::push "$next_screen"
             ;;
         "$DIALOG_CANCEL")
-            if wheel::stack::empty; then
-                local pushed_screen="$EXIT_SCREEN"
-                if ! wheel::json::is_null "$back_screen"; then
-                    pushed_screen="$back_screen"
-                fi
-                wheel::stack::push "$pushed_screen"
-                continue
-            fi
+            local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
+            "$action"
+            ;;
+        "$DIALOG_EXTRA")
+            local action; action=$(wheel::json::get_or_default "$screen" "handlerss.extra" "wheel::cancel_handler")
+            "$action"
+            ;;
+        "$DIALOG_ERROR")
+            # An error occurred on the CURRENT_SCREEN
+            # This means we pop it out, push our error handler
             wheel::stack::pop
+            wheel::stack::push "$ERROR_SCREEN"
             ;;
         "$DIALOG_ESC")
             if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
@@ -143,14 +177,17 @@ function wheel::main() {
     APP_WIDTH=$(wheel::json::get_or_default "$properties" "width" "0")
     APP_ASPECT=$(wheel::json::get_or_default "$properties" "aspect" "9")
     APP_BACKTITLE=$(wheel::json::get "$json_source" "title")
+    # TODO: Handle these settings more gracefully
     EXIT_SCREEN=$(wheel::json::get "$json_source" "exit")
     CURRENT_SCREEN=$(wheel::json::get "$json_source" "start")
+    ERROR_SCREEN=$(wheel::json::get "$json_source" "error")
     wheel::log::debug "Application Height: $APP_HEIGHT"
     wheel::log::debug "Application Width: $APP_WIDTH"
     wheel::log::debug "Application Aspect Ratio: $APP_ASPECT"
     wheel::log::debug "Application Title: $APP_BACKTITLE"
     wheel::log::debug "Exit screen: $EXIT_SCREEN"
     wheel::log::debug "Start screen: $CURRENT_SCREEN"
+    wheel::log::debug "Error screen: $ERROR_SCREEN"
     wheel::main_loop
 }
 

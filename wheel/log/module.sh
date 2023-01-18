@@ -26,8 +26,16 @@ function wheel::log::write() {
     local rest=("$@")
 
     if [ "$level" -ge "$LOG_THRESHOLD" ]; then
-        echo "[${LOG_LEVELS_TO_LABEL[$level]}] $(date -u +%Y-%m-%dT%H:%M:%SZ) - ${rest[*]}" >> $LOG_FILE
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [${LOG_LEVELS_TO_LABEL[$level]}] ${rest[*]}" >> $LOG_FILE
     fi
+}
+
+function wheel::log::stream() {
+    local logger=("$@")
+    local line
+    while read -r line; do
+        "${logger[@]}" "$line"
+    done
 }
 
 function wheel::log::info() {

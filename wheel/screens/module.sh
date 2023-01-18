@@ -64,13 +64,10 @@ function wheel::screens::yesno() {
 }
 
 function wheel::screens::custom() {
-    local entrypoint; entrypoint=$(wheel::json::get "$screen" "entrypoint")
-    if [ -z "$entrypoint" ] || [ "$entrypoint" = "null" ]; then
+    local entrypoint; entrypoint=$(wheel::json::get_or_default "$screen" "entrypoint" "")
+    if [ -z "$entrypoint" ]; then
         wheel::log::warn "Custom screen $CURRENT_SCREEN is missing 'entrypoint'"
-        dialog \
-            "${dialog_options[@]}" \
-            --msgbox \
-            "Could not invoke custom screen without an 'entrypoint' specified." "$screen_height" "$screen_width"
+        exit "$DIALOG_ERROR"
     else
         "$entrypoint"
     fi
@@ -103,10 +100,10 @@ function wheel::screens::_parse_menu_options() {
     IFS=$'\n'
     for item in $(wheel::json::get "$screen" "properties.items[]" "-c"); do
         local item_name; item_name=$(wheel::json::get "$item" "name")
-        local item_caps; item_caps=$(wheel::json::get "$item" "configures")
+        local item_caps; item_caps=$(wheel::json::get_or_default "$item" "configures" "")
         local item_desc; item_desc=$(wheel::json::get_or_default "$item" "description" "")
         local item_reqs; item_reqs=$(wheel::json::get_or_default "$item" "required" "false")
-        if ! wheel::json::is_null "$item_caps"; then
+        if [ -n "$item_caps" ]; then
             local prefix
             if [ -n "$(wheel::state::get "$item_caps")" ]; then
                 prefix="[X]"
@@ -139,35 +136,54 @@ function wheel::screens::hub() {
 
 function wheel::screens::gauge() {
     local actions=()
-    mapfile -t actions < <(wheel::json::get "$screen" 'properties.actions[]')
+    mapfile -t actions < <(wheel::json::get "$screen" 'properties.actions[]' -c)
     wheel::log::debug "Found the actions ${actions[*]}"
     if [ "$(wheel::json::get_or_default "$screen" "managed" "false")" = "true" ]; then
+        local output_file; output_file=$(wheel::json::get_or_default "$screen" "output_to" "")
+        # Support overriding logger for local actions
+        local LOG_FILE=${output_file:-$LOG_FILE}
         local total="${#actions[@]}"
-        local step=$((100/total))
         (
-            for index in "${!actions[@]}"; do
-                local percentage=$((step * (index + 1)))
+            for i in "${!actions[@]}"; do
+                local action="${actions[$i]}"
+                local label="Step $((i + 1)): $action"
+                if wheel::json::validate "$action"; then
+                    label=$(wheel::json::get_or_default "$action" "label" "$label")
+                    action=$(wheel::json::get "$action" "action")
+                fi
+                local frac; frac=$(echo "scale=2; ($i + 1)/$total" | bc)
+                local percentage; percentage=$(awk -vf="$frac" 'BEGIN{printf "%.0f", f * 100}')
                 echo "XXX"
                 echo "$percentage"
-                wheel::log::info "Invoking gauge action ${actions[$index]}"
-                "${actions[$index]}"
+                echo "$label"
                 echo "XXX"
+                local log_prefix="[$CURRENT_SCREEN][$i][$action]"
+                ({  "$action" 2>&1 1>&3 3>&- | wheel::log::stream wheel::log::error "$log_prefix"; exit "${PIPESTATUS[0]}"; } 3>&1 1>&2 | wheel::log::stream wheel::log::info "$log_prefix"; exit "${PIPESTATUS[0]}")
+                local action_exit=$?
+                wheel::log::debug "Action exits with $action_exit"
+                if [ $action_exit -ne 0 ]; then
+                    exit "$DIALOG_ERROR"
+                fi
             done
         ) |
         dialog \
             "${dialog_options[@]}" \
             --gauge \
             "$(wheel::json::get_or_default "$screen" "properties.text" "In progress. Please wait.")" "$screen_height" "$screen_width" 0
+        exit "${PIPESTATUS[0]}"
     else
         (
             for action in "${actions[@]}"; do
-                wheel::log::info "Invoking gauge action $action"
-                "$action"
+                wheel::log::info "Invoking $CURRENT_SCREEN action $action"
+                if ! "$action"; then
+                    exit "$DIALOG_ERROR"
+                fi
             done
         ) |
         dialog \
             "${dialog_options[@]}" \
             --gauge \
             "$(wheel::json::get_or_default "$screen" "properties.text" "In progress. Please wait.")" "$screen_height" "$screen_width" 0
+        exit "${PIPESTATUS[0]}"
     fi
 }

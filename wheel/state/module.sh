@@ -25,12 +25,7 @@ function wheel::state::flush() {
 function wheel::state::get() {
     local key=$1
 
-    local value; value=$(wheel::json::get "$APP_STATE" "$key")
-    if wheel::json::is_null "$value"; then
-        echo ""
-    else
-        echo "$value"
-    fi
+    wheel::json::get_or_default "$APP_STATE" "$key" ""
 }
 
 function wheel::state::set() {

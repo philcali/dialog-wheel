@@ -4,7 +4,6 @@ function application::example::hello_world() {
     # Delegates to the library method, however the following exist in env:
     # $screen
     # $dialog_options
-    # $title
     # $screen_width
     # $screen_height
     wheel::screens::msgbox
@@ -19,6 +18,16 @@ function application::example::validate() {
         echo "XXX"
         sleep 1
     done
+}
+
+function application::example::step() {
+    echo "Invoked from $CURRENT_SCREEN - $i"
+    echo "Some other things to be helpful: $(date -u)"
+}
+
+function application::example::step_failure() {
+    echo "Explosion!" >&2
+    exit 1
 }
 
 function application::example::step_one() {

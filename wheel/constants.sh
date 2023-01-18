@@ -8,6 +8,7 @@
 : "${DIALOG_HELP=2}"
 : "${DIALOG_EXTRA=3}"
 : "${DIALOG_TIMEOUT=5}"
+: "${DIALOG_ERROR=254}"
 : "${DIALOG_ESC=255}"
 
 : "${LOG_DEBUG=0}"

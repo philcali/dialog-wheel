@@ -126,6 +126,10 @@
                     {
                         "name": "Validate Managed",
                         "description": "Run a managed gauge program"
+                    },
+                    {
+                        "name": "Validate Managed Simple",
+                        "description": "Run a simple gauge program"
                     }
                 ]
             },
@@ -146,6 +150,40 @@
             "next":"Validation Result"
         },
         "Validate Managed": {
+            "type": "gauge",
+            "managed": true,
+            "output_to": "validation.log",
+            "dialog": {
+                "title": "Validating"
+            },
+            "properties": {
+                "width": 70,
+                "actions": [
+                    {
+                        "label": "Testing the device storage...",
+                        "action": "application::example::step"
+                    },
+                    {
+                        "label": "Testing the device compute...",
+                        "action": "application::example::step"
+                    },
+                    {
+                        "label": "Testing the device network...",
+                        "action": "application::example::step_failure"
+                    },
+                    {
+                        "label": "Testing authentication...",
+                        "action": "application::example::step"
+                    },
+                    {
+                        "label": "Testing authorization...",
+                        "action": "application::example::step"
+                    }
+                ]
+            },
+            "next": "Validation Result"
+        },
+        "Validate Managed Simple": {
             "type": "gauge",
             "managed": true,
             "dialog": {
@@ -212,8 +250,23 @@
             "properties": {
                 "text": "Are you sure you want to exit?"
             }
+        },
+        "Error": {
+            "type": "msgbox",
+            "dialog": {
+                "ok-label": "Back"
+            },
+            "properties": {
+                "text": "An unexpected error has occurred.\nPlease reach out to support.",
+                "width": 50,
+                "height": 7
+            },
+            "handlers": {
+                "ok": "wheel::cancel_handler"
+            }
         }
     },
     "start": "Welcome",
-    "exit": "Exit"
+    "exit": "Exit",
+    "error": "Error"
 }
