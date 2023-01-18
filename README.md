@@ -7,6 +7,8 @@ workflows and decision trees.
 Enter `dialog-wheel`, which is intended to allow a hub / spoke UX overlay
 for dialog single page displays.
 
+![Example Gif](images/example.gif)
+
 ## What does wheel handle?
 
 - State Management
