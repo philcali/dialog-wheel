@@ -145,18 +145,20 @@ function wheel::main_loop() {
 }
 
 function wheel::inclusion() {
-    local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]" "-c")
-    local inclusion
-    for inclusion in $inclusions; do
-        local file; file=$(wheel::json::get "$inclusion" "file")
-        local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
-        if [ ! -f "$directory/$file" ]; then
-            wheel::log::warn "Tried to include $directory/$file, but it does not exist"
-            continue
-        fi
-        # shellcheck source=examples/application.sh
-        . "$directory/$file"
-    done
+    if [ "$(wheel::json::get "$json_source" 'includes | length')" -gt 0 ]; then
+        local inclusion
+        local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]" -c)
+        for inclusion in $inclusions; do
+            local file; file=$(wheel::json::get "$inclusion" "file")
+            local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
+            if [ ! -f "$directory/$file" ]; then
+                wheel::log::warn "Tried to include $directory/$file, but it does not exist"
+                continue
+            fi
+            # shellcheck source=examples/application.sh
+            . "$directory/$file"
+        done
+    fi
 }
 
 function wheel::main() {

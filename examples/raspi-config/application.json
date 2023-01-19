@@ -1,0 +1,155 @@
+{
+    "version": "1.0.0",
+    "title": "Raspberry Pi Zero W Rev 1.1",
+    "properties": {
+        "width": 120
+    },
+    "screens": {
+        "Main Menu": {
+            "type": "hub",
+            "clear_history": true,
+            "dialog": {
+                "title": "Raspberry Pi Software Configuration Tool (raspi-config)",
+                "ok-label": "Select",
+                "cancel-label": "Finish",
+                "cursor-off-label": true,
+                "no-mouse": true,
+                "erase-on-exit": true
+            },
+            "properties": {
+                "box_height": 8,
+                "items": [
+                    {
+                        "name": "1 System Options",
+                        "description": "Configure system settings"
+                    },
+                    {
+                        "name": "2 Display Options",
+                        "description": "Configure display settings"
+                    },
+                    {
+                        "name": "3 Interface Options",
+                        "description": "Configure connections to peripherals"
+                    },
+                    {
+                        "name": "4 Performance Options",
+                        "description": "Configure performance settings"
+                    },
+                    {
+                        "name": "5 Localisation Options",
+                        "description": "Configure language and regional settings"
+                    },
+                    {
+                        "name": "6 Advanced Options",
+                        "description": "Configure advanced settings"
+                    },
+                    {
+                        "name": "8 Update",
+                        "description": "Update this tool to the latest version"
+                    },
+                    {
+                        "name": "9 About raspi-config",
+                        "description": "Information about this configuration tool"
+                    }
+                ]
+            }
+        },
+        "1 System Options": {
+            "type": "hub",
+            "dialog": {
+                "title": "Raspberry Pi Software Configuration Tool (raspi-config)",
+                "cancel-label": "Back",
+                "ok-label": "Select",
+                "cursor-off-label": true
+            },
+            "properties": {
+                "box_height": 8,
+                "items": [
+                    {
+                        "name": "S1 Wireless LAN",
+                        "description": "Enter SSID and passphrase"
+                    },
+                    {
+                        "name": "S2 Audio",
+                        "description": "Select audio out through HDMI or 3.5mm jack"
+                    },
+                    {
+                        "name": "S3 Password",
+                        "description": "Change password for the 'pi' user"
+                    },
+                    {
+                        "name": "S4 Hostname",
+                        "description": "Set name for this computer on a network"
+                    },
+                    {
+                        "name": "S5 Boot / Auto Login",
+                        "description": "Select boot into desktop or to command line"
+                    },
+                    {
+                        "name": "S6 Network at Boot",
+                        "description": "Select wait for network connection on boot"
+                    },
+                    {
+                        "name": "S7 Splash Screen",
+                        "description": "Choose graphical splash screen or text boot"
+                    },
+                    {
+                        "name": "S8 Power LED",
+                        "description": "Set behavior of power LED"
+                    }
+                ]
+            }
+        },
+        "2 Display Options": {
+            "type": "hub",
+            "dialog": {
+                "title": "Raspberry Pi Software Configuration Tool (raspi-config)",
+                "ok-label": "Select",
+                "cancel-label": "Back",
+                "cursor-off-label": true,
+                "no-mouse": true
+            },
+            "properties": {
+                "box_height": 8,
+                "items": [
+                    {
+                        "name": "D1 Resolution",
+                        "description": "Set a specific screen resolution"
+                    },
+                    {
+                        "name": "D2 Underscan",
+                        "description": "Remove black border around screen"
+                    }
+                ]
+            }
+        },
+        "3 Interface Options": {
+            "type": "hub",
+            "dialog": {
+                "title": "Raspberry Pi Software Configuration Tool (raspi-config)",
+                "ok-label": "Select",
+                "cancel-label": "Back",
+                "cursor-off-label": true,
+                "no-mouse": true
+            },
+            "properties": {
+                "box_height": 8,
+                "items": [
+                    {
+                        "name": "I1 Legacy Camera",
+                        "description": "Enable/disable legacy camera support"
+                    },
+                    {
+                        "name": "I2 SSH",
+                        "description": "Enable/disable remote command line access using SSH"
+                    },
+                    {
+                        "name": "I3 VNC",
+                        "description": "Enable/disable graphical remote access using RealVNC"
+                    }
+                ]
+            }
+        }
+    },
+    "start": "Main Menu"
+}

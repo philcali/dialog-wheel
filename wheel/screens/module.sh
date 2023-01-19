@@ -130,7 +130,7 @@ function wheel::screens::hub() {
     dialog \
         "${dialog_options[@]}" \
         --menu \
-        "$(wheel::json::get_or_default "$screen" "properties.text" "Please select an option:")" "$screen_height" "$screen_width" "$menu_height" \
+        "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" "$menu_height" \
         "${menu_options[@]}"
 }
 
