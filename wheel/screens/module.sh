@@ -74,17 +74,23 @@ function wheel::screens::custom() {
 }
 
 function wheel::screens::input() {
+    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     dialog \
         "${dialog_options[@]}" \
         --inputbox \
-        "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
+        "$(wheel::json::get "$screen" "properties.text")" \
+        "$screen_height" "$screen_width" \
+        "$(wheel::state::get "$captures")"
 }
 
 function wheel::screens::password() {
+    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     dialog \
         "${dialog_options[@]}" \
         --passwordbox \
-        "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
+        "$(wheel::json::get "$screen" "properties.text")" \
+        "$screen_height" "$screen_width" \
+        "$(wheel::state::get "$captures")"
 }
 
 function wheel::screens::calendar() {
@@ -95,15 +101,16 @@ function wheel::screens::calendar() {
 }
 
 function wheel::screens::_parse_menu_options() {
+    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     local -n ref=$1
     local old_ifs=$IFS
     IFS=$'\n'
-    for item in $(wheel::json::get "$screen" "properties.items[]" "-c"); do
+    for item in $(wheel::json::get "$screen" "properties.items[]" -c); do
         local item_name; item_name=$(wheel::json::get "$item" "name")
         local item_caps; item_caps=$(wheel::json::get_or_default "$item" "configures" "")
         local item_desc; item_desc=$(wheel::json::get_or_default "$item" "description" "")
         local item_reqs; item_reqs=$(wheel::json::get_or_default "$item" "required" "false")
-        if [ -n "$item_caps" ]; then
+        if [ -n "$item_caps" ] && [ "$2" = "menu" ]; then
             local prefix
             if [ -n "$(wheel::state::get "$item_caps")" ]; then
                 prefix="[X]"
@@ -118,6 +125,20 @@ function wheel::screens::_parse_menu_options() {
             item_desc="$prefix $item_desc"
         fi
         ref+=("$item_name" "$item_desc")
+        if [ "$2" = "list" ]; then
+            local on_off="off"
+            if [ -n "$item_caps" ]; then
+                [ "$(wheel::state::get "$item_caps")" = "true" ] && on_off="on"
+            elif [ "$(wheel::state::get "$captures")" = "$item_name" ]; then
+                on_off="on"
+            elif [ "$(wheel::state::get "$captures | length")" -gt 0 ]; then
+                local values
+                # shellcheck disable=SC2034 # does noe recgnize passed reference
+                mapfile -t values < <(wheel::state::get "${captures}"[] -c)
+                wheel::utils::in_array values "$item_name" && on_off="on"
+            fi
+            ref+=("$on_off")
+        fi
     done
     IFS=$old_ifs
 }
@@ -125,11 +146,60 @@ function wheel::screens::_parse_menu_options() {
 function wheel::screens::hub() {
     local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
     local menu_options
-    wheel::screens::_parse_menu_options menu_options
+    wheel::screens::_parse_menu_options menu_options "menu"
     wheel::log::debug "Menu options for $CURRENT_SCREEN: ${menu_options[*]}"
     dialog \
         "${dialog_options[@]}" \
         --menu \
+        "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" "$menu_height" \
+        "${menu_options[@]}"
+}
+
+function wheel::screens::checklist() {
+    local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
+    local menu_options
+    wheel::screens::_parse_menu_options menu_options "list"
+    wheel::log::debug "List options for $CURRENT_SCREEN: ${menu_options[*]}"
+    dialog \
+        "${dialog_options[@]}" \
+        --checklist \
+        "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" "$menu_height" \
+        "${menu_options[@]}"
+}
+
+function wheel::screens::checklist::list() {
+    local index
+    local value_arr
+    read -r -a value_arr <<< "$@"
+    for index in "${!value_arr[@]}"; do
+        wheel::state::set "${capture_into:?}[$index]" "${value_arr[$index]}"
+    done
+}
+
+function wheel::screens::checklist::field() {
+    local field
+    local reset
+    local value_arr
+    read -r -a value_arr <<< "$@"
+    for reset in $(wheel::json::get "$screen" "properties.items[].configures" -c -r); do
+        wheel::state::set "$reset" false "argjson"
+    done
+    for field in "${value_arr[@]}"; do
+        local field_cap; field_cap=$(wheel::json::get_or_default "$screen" "properties.items[] | select(.name == \"$field\") | .configures" "" -r)
+        if [ -n "$field_cap" ]; then
+            wheel::state::set "$field_cap" true "argjson"
+        fi
+    done
+}
+
+function wheel::screens::radiolist() {
+    local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
+    local menu_options
+    wheel::screens::_parse_menu_options menu_options "list"
+    wheel::log::debug "List options for $CURRENT_SCREEN: ${menu_options[*]}"
+    dialog \
+        "${dialog_options[@]}" \
+        --radiolist \
         "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" "$menu_height" \
         "${menu_options[@]}"
 }
@@ -175,9 +245,7 @@ function wheel::screens::gauge() {
         (
             for action in "${actions[@]}"; do
                 wheel::log::info "Invoking $CURRENT_SCREEN action $action"
-                if ! "$action"; then
-                    exit "$DIALOG_ERROR"
-                fi
+                "$action" || exit "$DIALOG_ERROR"
             done
         ) |
         dialog \

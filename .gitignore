@@ -1,3 +1,2 @@
 state.json
-test.log
-validation.log
+*.log

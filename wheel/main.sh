@@ -13,8 +13,6 @@ DIR=$(dirname "$(realpath "$0")")
 
 # TODO: below
 # item_generator
-# checklist
-# radiolist
 # fselect
 # form
 # rangebox
@@ -61,45 +59,39 @@ function wheel::parse_args() {
 
 # TODO: Perhaps we move this to a "handlers" module
 function wheel::ok_handler() {
-    if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
-        return 1
-    fi
-    if [ "$dialog_type" = "hub" ] && [ -n "$value" ]; then
-        next_screen=$value
-    fi
+    [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ] && return 1
+    [ "$dialog_type" = "hub" ] && [ -n "$value" ] && next_screen=$value
     wheel::stack::push "$next_screen"
 }
 
 function wheel::cancel_handler() {
     if wheel::stack::empty; then
         local pushed_screen="$EXIT_SCREEN"
-        if ! wheel::json::is_null "$back_screen"; then
-            pushed_screen="$back_screen"
-        fi
+        [ -n "$back_screen" ] && pushed_screen="$back_screen"
         wheel::stack::push "$pushed_screen"
         return 0
     fi
     wheel::stack::pop
 }
 
+function wheel::capture_into_handler() {
+    wheel::state::set "$capture_into" "$value"
+}
+
 function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
     while true; do
-        local screen; screen=$(wheel::json::get "$json_source" "screens[\$screen]" --arg screen "$CURRENT_SCREEN")
-        if [ -z "$screen" ] || [ "$screen" = "null" ]; then
-            break
-        fi
+        local screen; screen=$(wheel::json::get_or_default "$json_source" "screens[\$screen]" "" --arg screen "$CURRENT_SCREEN")
+        [ -z "$screen" ] && break
         local next_screen; next_screen=$(wheel::json::get "$screen" "next")
-        local back_screen; back_screen=$(wheel::json::get "$screen" "back")
         local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
+        local back_screen; back_screen=$(wheel::json::get_or_default "$screen" "back" "")
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
         local capture_into; capture_into=$(wheel::json::get_or_default "$screen" "capture_into" "")
         local value
-        wheel::log::debug "Displaying screen $CURRENT_SCREEN"
-        if [ "$clear_history" = "true" ]; then
-            wheel::stack::clear
-        fi
+        wheel::log::info "Displaying screen $CURRENT_SCREEN"
+        [ "$clear_history" = "true" ] && wheel::stack::clear
         wheel::screens::new_screen "$screen" "$dialog_type" "$answer_file"
         # Allow trap
         ACTIVE_DIALOG=$!
@@ -108,23 +100,23 @@ function wheel::main_loop() {
         ACTIVE_DIALOG=""
         value=$(cat "$answer_file")
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
-        if [ -n "$capture_into" ]; then
-            wheel::state::set "$capture_into" "$value"
-        fi
         case $returncode in
         "$DIALOG_OK")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::ok_handler")
-            if ! $action; then
-                break
+            local action
+            if [ -n "$capture_into" ]; then
+                action=$(wheel::json::get_or_default "$screen" "handlers.capture_into" "wheel::capture_into_handler")
+                "$action" "$value"
             fi
+            action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::ok_handler")
+            "$action" || break
             ;;
         "$DIALOG_CANCEL")
             local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
-            "$action"
+            "$action" || break
             ;;
         "$DIALOG_EXTRA")
             local action; action=$(wheel::json::get_or_default "$screen" "handlerss.extra" "wheel::cancel_handler")
-            "$action"
+            "$action" || break
             ;;
         "$DIALOG_ERROR")
             # An error occurred on the CURRENT_SCREEN

@@ -24,15 +24,19 @@ function wheel::state::flush() {
 
 function wheel::state::get() {
     local key=$1
+    shift
+    local rest=("$@")
 
-    wheel::json::get_or_default "$APP_STATE" "$key" ""
+    wheel::json::get_or_default "$APP_STATE" "$key" "" "${rest[@]}"
 }
 
 function wheel::state::set() {
     local key=$1
     local value=$2
+    shift 2
+    local rest=("$@")
 
-    local state; state=$(wheel::json::set "$APP_STATE" "$key" "$value")
+    local state; state=$(wheel::json::set "$APP_STATE" "$key" "$value" "${rest[@]}")
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
 }

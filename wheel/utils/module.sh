@@ -5,9 +5,7 @@ function wheel::utils::in_array() {
     local needle=$2
 
     for elem in "${haystack[@]}"; do
-        if [ "$elem" = "$needle" ]; then
-            return 0
-        fi
+        [ "$elem" = "$needle" ] && return 0
     done
     return 1
 }

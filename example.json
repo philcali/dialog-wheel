@@ -36,16 +36,16 @@
                         "description": "Configure this user"
                     },
                     {
+                        "name": "Form Menu",
+                        "description": "Place to see all of the forms"
+                    },
+                    {
                         "name": "Validate Menu",
                         "description": "Validate things are working"
                     },
                     {
                         "name": "Another",
                         "description": "Takes you to another page"
-                    },
-                    {
-                        "name": "Happiness Level",
-                        "description": "Asks if you are happy"
                     },
                     {
                         "name": "Invoke Custom",
@@ -56,6 +56,130 @@
                         "description": "Example of a custom screen missing properties"
                     }
                 ]
+            }
+        },
+        "Form Menu": {
+            "type": "hub",
+            "clear_history": true,
+            "dialog": {
+                "cancel-label": "Back"
+            },
+            "properties": {
+                "items": [
+                    {
+                        "name": "1 Checklist",
+                        "description": "A check list that returns a list"
+                    },
+                    {
+                        "name": "2 Checklist",
+                        "description": "A check list that flips fields"
+                    },
+                    {
+                        "name": "Radiolist",
+                        "description": "A radiolist"
+                    }
+                ]
+            },
+            "back": "Main Menu"
+        },
+        "1 Checklist": {
+            "type": "checklist",
+            "dialog": {
+                "title": "List Checklist"
+            },
+            "capture_into": "list",
+            "properties": {
+                "text": "Which electronics do you own?",
+                "items": [
+                    {
+                        "name": "Phone",
+                        "description": "Phone doubling as a camera / computer"
+                    },
+                    {
+                        "name": "Tablet",
+                        "description": "Like reading a book or something"
+                    },
+                    {
+                        "name": "Laptop",
+                        "description": "Computer in a lap"
+                    },
+                    {
+                        "name": "Desktop",
+                        "description": "Work in a single place"
+                    }
+                ]
+            },
+            "handlers": {
+                "ok": "wheel::cancel_handler",
+                "capture_into": "wheel::screens::checklist::list"
+            }
+        },
+        "2 Checklist": {
+            "type": "checklist",
+            "dialog": {
+                "title": "Field Checklist"
+            },
+            "capture_into": "electronics",
+            "properties": {
+                "text": "Which electronics do you own?",
+                "items": [
+                    {
+                        "name": "Phone",
+                        "description": "Phone doubling as a camera / computer",
+                        "configures": "electronics.phone"
+                    },
+                    {
+                        "name": "Tablet",
+                        "description": "Like reading a book or something",
+                        "configures": "electronics.tablet"
+                    },
+                    {
+                        "name": "Laptop",
+                        "description": "Computer in a lap",
+                        "configures": "electronics.laptop"
+                    },
+                    {
+                        "name": "Desktop",
+                        "description": "Work in a single place",
+                        "configures": "electronics.desktop"
+                    }
+                ]
+            },
+            "handlers": {
+                "ok": "wheel::cancel_handler",
+                "capture_into": "wheel::screens::checklist::field"
+            }
+        },
+        "Radiolist": {
+            "type": "radiolist",
+            "dialog": {
+                "title": "Radiolist",
+                "colors": true
+            },
+            "capture_into": "desired",
+            "properties": {
+                "text": "If you could only own \\Zbone\\ZB device type, which electronic would you keep?",
+                "items": [
+                    {
+                        "name": "Phone",
+                        "description": "Phone doubling as a camera / computer"
+                    },
+                    {
+                        "name": "Tablet",
+                        "description": "Like reading a book or something"
+                    },
+                    {
+                        "name": "Laptop",
+                        "description": "Computer in a lap"
+                    },
+                    {
+                        "name": "Desktop",
+                        "description": "Work in a single place"
+                    }
+                ]
+            },
+            "handlers": {
+                "ok": "wheel::cancel_handler"
             }
         },
         "User Menu": {
@@ -236,17 +360,11 @@
             },
             "next": "Main Menu"
         },
-        "Happiness Level": {
-            "type": "yesno",
-            "dialog": {
-                "title": "Happy Confirmation"
-            },
-            "properties": {
-                "text": "Are you happy?"
-            }
-        },
         "Exit": {
             "type": "yesno",
+            "dialog": {
+                "erase-on-exit": true
+            },
             "properties": {
                 "text": "Are you sure you want to exit?"
             }

@@ -34,6 +34,7 @@ function wheel::events::clean_up() {
 
 function wheel::events::set_traps() {
     trap "wheel::events::trap_exit" "$SIG_INT"
-    trap "wheel::events::kill_active_dialog" WINCH
+    # This appears to be breaking things in newer versions of dialog
+    # trap "wheel::events::kill_active_dialog" WINCH
     trap "wheel::events::clean_up" EXIT
 }
