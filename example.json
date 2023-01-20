@@ -77,6 +77,10 @@
                     {
                         "name": "Radiolist",
                         "description": "A radiolist"
+                    },
+                    {
+                        "name": "Select File",
+                        "description": "Allows the ability to select a file"
                     }
                 ]
             },
@@ -181,6 +185,48 @@
             "handlers": {
                 "ok": "wheel::cancel_handler"
             }
+        },
+        "Select File": {
+            "type": "files",
+            "capture_into": "file",
+            "dialog": {
+                "extra-button": true,
+                "extra-label": "Reset"
+            },
+            "handlers": {
+                "ok": "wheel::screens::files::select",
+                "extra": "wheel::clear_capture_handler"
+            },
+            "next": "Read File",
+            "back": "Form Menu"
+        },
+        "Read File": {
+            "type": "textbox",
+            "dialog": {
+                "extra-button": true,
+                "extra-label": "Back",
+                "ok-label": "Open"
+            },
+            "properties": {
+                "text": "$state.file"
+            },
+            "next": "Open File",
+            "back": "Select File"
+        },
+        "Open File": {
+            "type": "editor",
+            "dialog": {
+                "ok-label": "Save",
+                "cancel-label": "Close"
+            },
+            "properties": {
+                "text": "$state.file"
+            },
+            "handlers": {
+                "ok": "wheel::screens::editor::save"
+            },
+            "next": "Read File",
+            "back": "Read File"
         },
         "User Menu": {
             "type": "hub",

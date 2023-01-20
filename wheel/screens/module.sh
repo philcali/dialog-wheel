@@ -204,6 +204,51 @@ function wheel::screens::radiolist() {
         "${menu_options[@]}"
 }
 
+function wheel::screens::files() {
+    local captures; captures=$(wheel::json::get "$screen" "capture_into")
+    dialog \
+        "${dialog_options[@]}" \
+        --fselect \
+        "$(wheel::state::get "$captures")" "$screen_height" "$screen_width"
+}
+
+function wheel::screens::files::select() {
+    local selection=$1
+    if [ -d "$selection" ]; then
+        wheel::state::set "$capture_into" "$selection/"
+    fi
+    if [ -f "$selection" ]; then
+        wheel::ok_handler "$selection"
+    fi
+}
+
+function wheel::screens::textbox() {
+    local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
+    text_file=$(wheel::state::interpolate "$text_file")
+    [ ! -f "$text_file" ] && exit "$DIALOG_ERROR"
+    dialog \
+        "${dialog_options[@]}" \
+        --textbox \
+        "$text_file" "$screen_height" "$screen_width"
+}
+
+function wheel::screens::editor() {
+    local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
+    text_file=$(wheel::state::interpolate "$text_file")
+    [ ! -f "$text_file" ] && exit "$DIALOG_ERROR"
+    dialog \
+        "${dialog_options[@]}" \
+        --editbox \
+        "$text_file" "$screen_height" "$screen_width"
+}
+
+function wheel::screens::editor::save() {
+    local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
+    text_file=$(wheel::state::interpolate "$text_file")
+    cp "$answer_file" "$text_file"
+    wheel::ok_handler
+}
+
 function wheel::screens::gauge() {
     local actions=()
     mapfile -t actions < <(wheel::json::get "$screen" 'properties.actions[]' -c)

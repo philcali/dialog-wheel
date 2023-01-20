@@ -13,14 +13,12 @@ DIR=$(dirname "$(realpath "$0")")
 
 # TODO: below
 # item_generator
-# fselect
 # form
 # rangebox
 # state interpolation
 
 INPUT_SOURCE=""
 CURRENT_SCREEN=""
-# TODO: make defaults in the screen module
 EXIT_SCREEN=""
 ERROR_SCREEN=""
 
@@ -65,10 +63,12 @@ function wheel::ok_handler() {
 }
 
 function wheel::cancel_handler() {
+    if [ -n "$back_screen" ]; then
+        wheel::stack::push "$back_screen"
+        return 0
+    fi
     if wheel::stack::empty; then
-        local pushed_screen="$EXIT_SCREEN"
-        [ -n "$back_screen" ] && pushed_screen="$back_screen"
-        wheel::stack::push "$pushed_screen"
+        wheel::stack::push "$EXIT_SCREEN"
         return 0
     fi
     wheel::stack::pop
@@ -76,6 +76,23 @@ function wheel::cancel_handler() {
 
 function wheel::capture_into_handler() {
     wheel::state::set "$capture_into" "$value"
+}
+
+function wheel::clear_capture_handler() {
+    wheel::state::del "$capture_into"
+}
+
+function wheel::esc_handler() {
+    if [ "$(wheel::json::get_or_default "$json_source" "esc_is_cancel" "false")" = "true" ]; then
+        local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
+        "$action"
+    else
+        if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
+            wheel::stack::pop
+            return 0
+        fi
+        wheel::stack::push "$EXIT_SCREEN"
+    fi
 }
 
 function wheel::main_loop() {
@@ -108,14 +125,18 @@ function wheel::main_loop() {
                 "$action" "$value"
             fi
             action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::ok_handler")
-            "$action" || break
+            "$action" "$value" || break
             ;;
         "$DIALOG_CANCEL")
             local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
             "$action" || break
             ;;
+        "$DIALOG_HELP")
+            local action; action=$(wheel::json::get_or_default "$screen" "handlers.help" "wheel::cancel_handler")
+            "$action" || break
+            ;;
         "$DIALOG_EXTRA")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlerss.extra" "wheel::cancel_handler")
+            local action; action=$(wheel::json::get_or_default "$screen" "handlers.extra" "wheel::cancel_handler")
             "$action" || break
             ;;
         "$DIALOG_ERROR")
@@ -125,11 +146,8 @@ function wheel::main_loop() {
             wheel::stack::push "$ERROR_SCREEN"
             ;;
         "$DIALOG_ESC")
-            if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
-                wheel::stack::pop
-                continue
-            fi
-            wheel::stack::push "$EXIT_SCREEN"
+            local action; action=$(wheel::json::get_or_default "$screen" "handlers.esc" "wheel::esc_handler")
+            "$action" || break
             ;;
         esac
     done

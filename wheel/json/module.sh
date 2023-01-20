@@ -21,6 +21,12 @@ function wheel::json::set() {
     echo "$map" | jq --"$argtype" value "$value" ". | setpath(path(.$key); \$value)"
 }
 
+function wheel::json::del() {
+    local map=$1
+    local key=$2
+    echo "$map" | jq ". | del(.$key)"
+}
+
 function wheel::json::get_or_default() {
     local map=$1
     local key=$2

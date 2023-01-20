@@ -40,3 +40,20 @@ function wheel::state::set() {
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
 }
+
+function wheel::state::del() {
+    local key=$2
+
+    local state; state=$(wheel::json::del "$APP_STATE" "$key")
+    wheel::log::debug "Setting state to: $state"
+    APP_STATE=$state
+}
+
+function wheel::state::interpolate() {
+    local input=$1
+    if [[ "$input" =~ ^\$state\. ]]; then
+        wheel::state::get "$(echo -n "$input" | sed "s|\$state.||")"
+    else
+        echo "$input"
+    fi
+}
