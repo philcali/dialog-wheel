@@ -49,6 +49,14 @@ function wheel::json::merge() {
     local expanded_filter=""
     local expanded_merge=""
     local length="${#fields[@]}"
+    if [ "$length" -eq 0 ]; then
+        mapfile -t fields < <(wheel::json::get "$parent" ". as \$self | keys | .[] | select(. != \"screens\") | select(\$self[.] | type == \"object\")")
+        length="${#fields[@]}"
+    fi
+    if [ "$length" -eq 0 ]; then
+        wheel::json::get "$parent" "screens[\$screen]" --arg screen "$child"
+        return 0
+    fi
     for index in "${!fields[@]}"; do
         field="${fields[$index]}"
         expanded_filter+="{} + .$field + .screens[\$screen].$field"
