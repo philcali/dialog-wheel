@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "title": "Example App",
-    "properties": {
+    "dialog": {
+        "backtitle": "Example App",
         "aspect": 20
     },
     "includes": [
@@ -56,6 +56,9 @@
                         "description": "Example of a custom screen missing properties"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
             }
         },
         "Form Menu": {
@@ -83,6 +86,9 @@
                         "description": "Allows the ability to select a file"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
             },
             "back": "Main Menu"
         },
@@ -252,6 +258,9 @@
                     }
                 ]
             },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
+            },
             "back": "Main Menu"
         },
         "Password": {
@@ -302,6 +311,9 @@
                         "description": "Run a simple gauge program"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
             },
             "back": "Main Menu"
         },

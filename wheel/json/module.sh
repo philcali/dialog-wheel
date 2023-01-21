@@ -40,6 +40,28 @@ function wheel::json::get_or_default() {
     fi
 }
 
+function wheel::json::merge() {
+    local parent=$1
+    local child=$2
+    local field
+    shift 2
+    local fields=("$@")
+    local expanded_filter=""
+    local expanded_merge=""
+    local length="${#fields[@]}"
+    for index in "${!fields[@]}"; do
+        field="${fields[$index]}"
+        expanded_filter+="{} + .$field + .screens[\$screen].$field"
+        expanded_merge+="\"$field\": .[$index]"
+        if [ "$index" -lt "$((length - 1))" ]; then
+            expanded_filter+=", "
+            expanded_merge+=", "
+        fi
+    done
+    wheel::log::trace "Merge merge expression:" "filter [$expanded_filter]" "reducer {$expanded_merge}"
+    wheel::json::get "$parent" " as \$self | [$expanded_filter] | \$self.screens[\$screen] + {$expanded_merge}" --arg screen "$child"
+}
+
 function wheel::json::validate() {
     local input=$1
     local msg; msg=$(echo "$input" | jq 2>&1)

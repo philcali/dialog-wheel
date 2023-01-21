@@ -16,16 +16,10 @@ DIR=$(dirname "$(realpath "$0")")
 # form
 # rangebox
 # state interpolation
-
 INPUT_SOURCE=""
 CURRENT_SCREEN=""
 EXIT_SCREEN=""
 ERROR_SCREEN=""
-
-APP_BACKTITLE=""
-APP_ASPECT=""
-APP_WIDTH=""
-APP_HEIGHT=""
 
 function wheel::usage() {
     local exit_code=${1:-0}
@@ -58,7 +52,6 @@ function wheel::parse_args() {
 # TODO: Perhaps we move this to a "handlers" module
 function wheel::ok_handler() {
     [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ] && return 1
-    [ "$dialog_type" = "hub" ] && [ -n "$value" ] && next_screen=$value
     wheel::stack::push "$next_screen"
 }
 
@@ -83,33 +76,27 @@ function wheel::clear_capture_handler() {
 }
 
 function wheel::esc_handler() {
-    if [ "$(wheel::json::get_or_default "$json_source" "esc_is_cancel" "false")" = "true" ]; then
-        local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
-        "$action"
-    else
-        if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
-            wheel::stack::pop
-            return 0
-        fi
-        wheel::stack::push "$EXIT_SCREEN"
+    if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
+        wheel::stack::pop
+        return 0
     fi
+    wheel::stack::push "$EXIT_SCREEN"
 }
 
 function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
     while true; do
-        local screen; screen=$(wheel::json::get_or_default "$json_source" "screens[\$screen]" "" --arg screen "$CURRENT_SCREEN")
-        [ -z "$screen" ] && break
+        [ "$(wheel::json::get "$json_source" "screens | has(\"$CURRENT_SCREEN\")")" = "false" ] && break
+        local screen; screen=$(wheel::json::merge "$json_source" "$CURRENT_SCREEN" dialog properties handlers)
         local next_screen; next_screen=$(wheel::json::get "$screen" "next")
-        local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
         local back_screen; back_screen=$(wheel::json::get_or_default "$screen" "back" "")
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
         local capture_into; capture_into=$(wheel::json::get_or_default "$screen" "capture_into" "")
         local value
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
-        wheel::screens::new_screen "$screen" "$dialog_type" "$answer_file"
+        wheel::screens::new_screen "$screen" "$answer_file"
         # Allow trap
         ACTIVE_DIALOG=$!
         wait $ACTIVE_DIALOG
@@ -142,6 +129,7 @@ function wheel::main_loop() {
         "$DIALOG_ERROR")
             # An error occurred on the CURRENT_SCREEN
             # This means we pop it out, push our error handler
+            # TODO: make this a handler
             wheel::stack::pop
             wheel::stack::push "$ERROR_SCREEN"
             ;;
@@ -151,6 +139,7 @@ function wheel::main_loop() {
             ;;
         esac
     done
+    wheel::log::debug "Last screen was $CURRENT_SCREEN"
     wheel::log::info "Exiting Dialog Loop"
 }
 
@@ -165,8 +154,10 @@ function wheel::inclusion() {
                 wheel::log::warn "Tried to include $directory/$file, but it does not exist"
                 continue
             fi
+            wheel::log::trace "Including $directory/$file"
             # shellcheck source=examples/application.sh
             . "$directory/$file"
+            wheel::log::trace "Inclusion exits with $?"
         done
     fi
 }
@@ -184,19 +175,10 @@ function wheel::main() {
     wheel::events::add_clean_up "rm $answer_file"
     wheel::events::add_clean_up "wheel::state::flush"
     wheel::inclusion
-    local properties; properties=$(wheel::json::get "$json_source" "properties")
-    APP_HEIGHT=$(wheel::json::get_or_default "$properties" "height" "0")
-    APP_WIDTH=$(wheel::json::get_or_default "$properties" "width" "0")
-    APP_ASPECT=$(wheel::json::get_or_default "$properties" "aspect" "9")
-    APP_BACKTITLE=$(wheel::json::get "$json_source" "title")
     # TODO: Handle these settings more gracefully
     EXIT_SCREEN=$(wheel::json::get "$json_source" "exit")
     CURRENT_SCREEN=$(wheel::json::get "$json_source" "start")
     ERROR_SCREEN=$(wheel::json::get "$json_source" "error")
-    wheel::log::debug "Application Height: $APP_HEIGHT"
-    wheel::log::debug "Application Width: $APP_WIDTH"
-    wheel::log::debug "Application Aspect Ratio: $APP_ASPECT"
-    wheel::log::debug "Application Title: $APP_BACKTITLE"
     wheel::log::debug "Exit screen: $EXIT_SCREEN"
     wheel::log::debug "Start screen: $CURRENT_SCREEN"
     wheel::log::debug "Error screen: $ERROR_SCREEN"
