@@ -19,5 +19,7 @@ jobs:
         fetch-depth: 0
     - name: Conventional Commit Checker
       uses: wagoid/commitlint-github-action@v4
+    - name: Prepare
+      run: apt-get update -yq && apt-get install dialog bc jq -yq
     - name: Test
       run: ./test/bats/bin/bats test/
