@@ -54,7 +54,7 @@ function wheel::log::error() {
 }
 
 function wheel::log::fatal() {
-    wheel::log::write "$LOG_ERROR" "$@"
+    wheel::log::write "$LOG_FATAL" "$@"
 }
 
 function wheel::log::trace() {
