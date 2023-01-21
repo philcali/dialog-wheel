@@ -22,6 +22,6 @@ jobs:
     - name: Prepare
       run: |
         sudo apt-get update -yq
-        apt-get install dialog bc jq -yq
+        sudo apt-get install dialog bc jq -yq
     - name: Test
       run: ./test/bats/bin/bats test/
