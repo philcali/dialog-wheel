@@ -206,7 +206,7 @@
                 "text": "Set a new system volume",
                 "min": 0,
                 "max": 100,
-                "default": 50,
+                "default": "$state.volume",
                 "width": 70
             },
             "handlers": {

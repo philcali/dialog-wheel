@@ -239,11 +239,14 @@ function wheel::screens::editor::save() {
 }
 
 function wheel::screens::range() {
+    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     local prop_opts=("$(wheel::json::get_or_default "$screen" "properties.text" "")")
+    local default_value; default_value=$(wheel::json::get_or_default "$screen" "properties.default" "0")
+    default_value=$(wheel::state::interpolate "$default_value")
     prop_opts+=("$screen_height" "$screen_width")
     prop_opts+=("$(wheel::json::get_or_default "$screen" "properties.min" "0")")
     prop_opts+=("$(wheel::json::get_or_default "$screen" "properties.max" "10")")
-    prop_opts+=("$(wheel::json::get_or_default "$screen" "properties.default" "0")")
+    prop_opts+=("$default_value")
     dialog \
         "${dialog_options[@]}" \
         --rangebox \
