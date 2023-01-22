@@ -12,7 +12,7 @@ DIR=$(dirname "$(realpath "$0")")
 
 
 # TODO: below
-# replace all captures -> capture_into references (dep on tests)
+# handlers module
 # item_generator
 # form (as a mixed one)
 # mixedgauge (dep on item_generator)
@@ -50,7 +50,6 @@ function wheel::parse_args() {
     done
 }
 
-# TODO: Perhaps we move this to a "handlers" module
 function wheel::ok_handler() {
     [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ] && return 1
     wheel::stack::push "$next_screen"
@@ -97,8 +96,8 @@ function wheel::main_loop() {
         local value
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
-        wheel::screens::new_screen "$screen" "$answer_file"
         # Allow trap
+        wheel::screens::new_screen "$screen" "$answer_file" &
         ACTIVE_DIALOG=$!
         wait $ACTIVE_DIALOG
         returncode=$?

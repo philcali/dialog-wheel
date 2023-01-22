@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 
+DIALOG=("dialog")
+
 function wheel::screens::new_screen() {
     local screen="$1"
     local answer_file="$2"
     local dialog_type; dialog_type=$(wheel::json::get "$screen" "type")
     local screen_height; screen_height=$(wheel::json::get_or_default "$screen" "properties.height" "0")
     local screen_width; screen_width=$(wheel::json::get_or_default "$screen" "properties.width" "0")
+    # Local here to assist in testing
+    local capture_into=${capture_into:-"$(wheel::json::get_or_default "$screen" "capture_into" "")"}
 
     # pass by reference to set generic dialog options
     local dialog_options
     wheel::screens::set_dialog_options dialog_options
-    "wheel::screens::$dialog_type" 2>"$answer_file" &
+    "wheel::screens::$dialog_type" 2>"$answer_file"
 }
 
 function wheel::screens::set_dialog_options() {
@@ -40,34 +44,38 @@ function wheel::screens::set_dialog_options() {
     wheel::log::debug "Dialog options: ${options[*]}"
 }
 
-function wheel::screens::msgbox() {
-    dialog \
+function wheel::screens::_info_type() {
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
-        --msgbox \
+        --"$1" \
         "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
 }
 
+function wheel::screens::msgbox() {
+    wheel::screens::_info_type "msgbox"
+}
+
+function wheel::screens::info() {
+    wheel::screens::_info_type "infobox"
+}
+
 function wheel::screens::yesno() {
-    dialog \
-        "${dialog_options[@]}" \
-        --yesno \
-        "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
+    wheel::screens::_info_type "yesno"
 }
 
 function wheel::screens::custom() {
     local entrypoint; entrypoint=$(wheel::json::get_or_default "$screen" "entrypoint" "")
     if [ -z "$entrypoint" ]; then
         wheel::log::warn "Custom screen $CURRENT_SCREEN is missing 'entrypoint'"
-        exit "$DIALOG_ERROR"
+        return "$DIALOG_ERROR"
     else
         "$entrypoint"
     fi
 }
 
-function wheel::screens::_inputbox_type() {
-    local captures; captures=$(wheel::json::get "$screen" "capture_into")
+function wheel::screens::_input_type() {
     local text_value; text_value=$(wheel::json::get_or_default "$screen" "properties.text" "")
-    local state_value; state_value=$(wheel::state::get "$captures")
+    local state_value; state_value=$(wheel::state::get "$capture_into")
     local thing_opts=()
     if [ "$2" = "text_is_value" ]; then
         thing_opts+=("$state_value")
@@ -76,32 +84,44 @@ function wheel::screens::_inputbox_type() {
     fi
     thing_opts+=("$screen_height" "$screen_width")
     [ "$2" != "text_is_value" ] && thing_opts+=("$state_value")
-    dialog \
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --"$1" \
         "${thing_opts[@]}"
 }
 
 function wheel::screens::input() {
-    wheel::screens::_inputbox_type "inputbox"
+    wheel::screens::_input_type "inputbox"
 }
 
 function wheel::screens::password() {
-    wheel::screens::_inputbox_type "passwordbox"
+    wheel::screens::_input_type "passwordbox"
+}
+
+function wheel::screens::files() {
+    wheel::screens::_input_type "fselect" "text_is_value"
+}
+
+function wheel::screens::files::select() {
+    local selection=$1
+    if [ -d "$selection" ]; then
+        wheel::state::set "$capture_into" "$selection/"
+    fi
+    if [ -f "$selection" ]; then
+        wheel::ok_handler "$selection"
+    fi
 }
 
 function wheel::screens::calendar() {
-    local captures; captures=$(wheel::json::get "$screen" "capture_into")
-    IFS=$'/' read -r -a state_values <<< "$(wheel::state::get "$captures")"
-    dialog \
+    IFS=$'/' read -r -a state_values <<< "$(wheel::state::get "$capture_into")"
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --calendar \
-        "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width" \
+        "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" \
         "${state_values[@]}"
 }
 
 function wheel::screens::_parse_menu_options() {
-    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     local -n ref=$1
     local old_ifs=$IFS
     IFS=$'\n'
@@ -129,12 +149,12 @@ function wheel::screens::_parse_menu_options() {
             local on_off="off"
             if [ -n "$item_caps" ]; then
                 [ "$(wheel::state::get "$item_caps")" = "true" ] && on_off="on"
-            elif [ "$(wheel::state::get "$captures")" = "$item_name" ]; then
+            elif [ "$(wheel::state::get "$capture_into")" = "$item_name" ]; then
                 on_off="on"
-            elif [ "$(wheel::state::get "$captures | type")" = "array" ]; then
+            elif [ "$(wheel::state::get "$capture_into | type")" = "array" ]; then
                 local values
                 # shellcheck disable=SC2034 # does not recgnize passed reference
-                mapfile -t values < <(wheel::state::get "${captures}"[] -c)
+                mapfile -t values < <(wheel::state::get "${capture_into}"[] -c)
                 wheel::utils::in_array values "$item_name" && on_off="on"
             fi
             ref+=("$on_off")
@@ -143,12 +163,12 @@ function wheel::screens::_parse_menu_options() {
     IFS=$old_ifs
 }
 
-function wheel::screens::_listtype() {
+function wheel::screens::_list_type() {
     local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
     local menu_options
     wheel::screens::_parse_menu_options menu_options "${2:-$1}"
     wheel::log::debug "Menu options for $CURRENT_SCREEN: ${menu_options[*]}"
-    dialog \
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --"$1" \
         "$(wheel::json::get_or_default "$screen" "properties.text" "")" "$screen_height" "$screen_width" "$menu_height" \
@@ -156,7 +176,15 @@ function wheel::screens::_listtype() {
 }
 
 function wheel::screens::hub() {
-    wheel::screens::_listtype "menu"
+    wheel::screens::_list_type "menu"
+}
+
+function wheel::screens::checklist() {
+    wheel::screens::_list_type "checklist" "list"
+}
+
+function wheel::screens::radiolist() {
+    wheel::screens::_list_type "radiolist" "list"
 }
 
 function wheel::screens::hub::selection() {
@@ -164,10 +192,6 @@ function wheel::screens::hub::selection() {
     [ -n "$1" ] && next_screen=$1
     wheel::log::trace "Selected next screen is $next_screen"
     wheel::ok_handler
-}
-
-function wheel::screens::checklist() {
-    wheel::screens::_listtype "checklist" "list"
 }
 
 function wheel::screens::checklist::list() {
@@ -195,40 +219,22 @@ function wheel::screens::checklist::field() {
     done
 }
 
-function wheel::screens::radiolist() {
-    wheel::screens::_listtype "radiolist" "list"
-}
-
-function wheel::screens::files() {
-    wheel::screens::_inputbox_type "fselect" "text_is_value"
-}
-
-function wheel::screens::files::select() {
-    local selection=$1
-    if [ -d "$selection" ]; then
-        wheel::state::set "$capture_into" "$selection/"
-    fi
-    if [ -f "$selection" ]; then
-        wheel::ok_handler "$selection"
-    fi
-}
-
-function wheel::screens::_filetype() {
+function wheel::screens::_file_type() {
     local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
     text_file=$(wheel::state::interpolate "$text_file")
     [ ! -f "$text_file" ] && exit "$DIALOG_ERROR"
-    dialog \
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --"$1" \
         "$text_file" "$screen_height" "$screen_width"
 }
 
 function wheel::screens::textbox() {
-    wheel::screens::_filetype "textbox"
+    wheel::screens::_file_type "textbox"
 }
 
 function wheel::screens::editor() {
-    wheel::screens::_filetype "editbox"
+    wheel::screens::_file_type "editbox"
 }
 
 function wheel::screens::editor::save() {
@@ -239,7 +245,6 @@ function wheel::screens::editor::save() {
 }
 
 function wheel::screens::range() {
-    local captures; captures=$(wheel::json::get "$screen" "capture_into")
     local prop_opts=("$(wheel::json::get_or_default "$screen" "properties.text" "")")
     local default_value; default_value=$(wheel::json::get_or_default "$screen" "properties.default" "0")
     default_value=$(wheel::state::interpolate "$default_value")
@@ -247,7 +252,7 @@ function wheel::screens::range() {
     prop_opts+=("$(wheel::json::get_or_default "$screen" "properties.min" "0")")
     prop_opts+=("$(wheel::json::get_or_default "$screen" "properties.max" "10")")
     prop_opts+=("$default_value")
-    dialog \
+    "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --rangebox \
         "${prop_opts[@]}"
@@ -286,11 +291,11 @@ function wheel::screens::gauge() {
                 fi
             done
         ) |
-        dialog \
+        "${DIALOG[@]}" \
             "${dialog_options[@]}" \
             --gauge \
             "$screen_label" "$screen_height" "$screen_width" 0
-        exit "${PIPESTATUS[0]}"
+        return "${PIPESTATUS[0]}"
     else
         (
             for action in "${actions[@]}"; do
@@ -298,10 +303,10 @@ function wheel::screens::gauge() {
                 "$action" || exit "$DIALOG_ERROR"
             done
         ) |
-        dialog \
+        "${DIALOG[@]}" \
             "${dialog_options[@]}" \
             --gauge \
             "$screen_label" "$screen_height" "$screen_width" 0
-        exit "${PIPESTATUS[0]}"
+        return "${PIPESTATUS[0]}"
     fi
 }
