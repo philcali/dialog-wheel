@@ -82,6 +82,10 @@
                         "description": "A radiolist"
                     },
                     {
+                        "name": "Range",
+                        "description": "Select a value by range"
+                    },
+                    {
                         "name": "Select File",
                         "description": "Allows the ability to select a file"
                     }
@@ -187,6 +191,23 @@
                         "description": "Work in a single place"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::cancel_handler"
+            }
+        },
+        "Range": {
+            "type": "range",
+            "capture_into": "volume",
+            "dialog": {
+                "title": "Speaker Volume"
+            },
+            "properties": {
+                "text": "Set a new system volume",
+                "min": 0,
+                "max": 100,
+                "default": 50,
+                "width": 70
             },
             "handlers": {
                 "ok": "wheel::cancel_handler"

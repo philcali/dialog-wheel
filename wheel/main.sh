@@ -13,8 +13,8 @@ DIR=$(dirname "$(realpath "$0")")
 
 # TODO: below
 # item_generator
-# form
-# rangebox
+# form (as a mixed one)
+# mixedgauge (dep on item_generator)
 # state interpolation
 INPUT_SOURCE=""
 CURRENT_SCREEN=""
@@ -126,7 +126,7 @@ function wheel::main_loop() {
             local action; action=$(wheel::json::get_or_default "$screen" "handlers.extra" "wheel::cancel_handler")
             "$action" || break
             ;;
-        "$DIALOG_ERROR")
+        "$DIALOG_ERROR"|"$DIALOG_NOT_FOUND")
             # An error occurred on the CURRENT_SCREEN
             # This means we pop it out, push our error handler
             # TODO: make this a handler
