@@ -49,6 +49,7 @@ function wheel::state::del() {
     APP_STATE=$state
 }
 
+# TODO: fix this
 function wheel::state::interpolate() {
     local input=$1
     if [[ "$input" =~ ^\$state\. ]]; then
