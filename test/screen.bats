@@ -165,6 +165,177 @@ setup() {
     assert [ "$expected_cmd" = "$actual_cmd" ]
 }
 
+@test "wheel::screens::checklist - read from list" {
+    APP_STATE="{\"favorites\": [\"Bourbon\"]}"
+    screen='
+    {
+        "type": "checklist",
+        "dialog": {
+            "title": "Favorite Things"
+        },
+        "capture_into": "favorites",
+        "properties": {
+            "text": "Select your favorite things:",
+            "items": [
+                {
+                    "name": "Chocolate",
+                    "description": "Needs no introduction"
+                },
+                {
+                    "name": "Bourbon",
+                    "description": "American whiskey"
+                }
+            ]
+        }
+    }'
+    local expected_cmd="dialog --title Favorite Things --checklist Select your favorite things: 0 0 5 Chocolate Needs no introduction off Bourbon American whiskey on"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
+@test "wheel::screens::checklist - read from fields" {
+    APP_STATE="{\"favorites\": {\"chocolate\": true}}"
+    screen='
+    {
+        "type": "checklist",
+        "dialog": {
+            "title": "Favorite Things"
+        },
+        "capture_into": "favorites",
+        "properties": {
+            "text": "Select your favorite things:",
+            "items": [
+                {
+                    "name": "Chocolate",
+                    "description": "Needs no introduction",
+                    "configures": "favorites.chocolate"
+                },
+                {
+                    "name": "Bourbon",
+                    "description": "American whiskey",
+                    "configures": "favorites.bourbon"
+                }
+            ]
+        }
+    }'
+    local expected_cmd="dialog --title Favorite Things --checklist Select your favorite things: 0 0 5 Chocolate Needs no introduction on Bourbon American whiskey off"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
+@test "wheel::screens::range" {
+    APP_STATE="{\"selection\": 5}"
+    screen='
+    {
+        "type": "range",
+        "capture_into": "selection",
+        "dialog": {
+            "title": "Range Selection"
+        },
+        "properties": {
+            "text": "Happiness",
+            "default": "$state.selection"
+        }
+    }'
+    local expected_cmd="dialog --title Range Selection --rangebox Happiness 0 0 0 10 5"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
+@test "wheel::screens::gauge" {
+    # Best to use a real dialog in this case
+    DIALOG=("dialog")
+    CURRENT_SCREEN="Install Screen"
+    LOG_FILE="$(mktemp)"
+    trap "rm -rf $LOG_FILE" EXIT
+    screen='
+    {
+        "type": "gauge",
+        "managed": true,
+        "dialog": {
+            "title": "Installation"
+        },
+        "properties": {
+            "width": 70,
+            "actions": [
+                "wheel::test::gauge_managed_one",
+                "wheel::test::gauge_managed_two"
+            ]
+        }
+    }'
+    assert wheel::screens::new_screen "$screen" "$answer_file"
+    assert [ "$(grep gauge_managed_one < $LOG_FILE | wc -l)" -eq 1 ]
+    assert [ "$(grep gauge_managed_two < $LOG_FILE | wc -l)" -eq 1 ]
+}
+
+@test "wheel::screens::textbox" {
+    screen='
+    {
+        "type": "textbox",
+        "dialog": {
+            "title": "Open File"
+        },
+        "properties": {
+            "text": "example.json"
+        }
+    }'
+    local expected_cmd="dialog --title Open File --textbox example.json 0 0"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
+@test "wheel::screens::editor" {
+    screen='
+    {
+        "type": "editor",
+        "dialog": {
+            "title": "Edit File"
+        },
+        "properties": {
+            "text": "example.json"
+        }
+    }'
+    local expected_cmd="dialog --title Edit File --editbox example.json 0 0"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
+@test "wheel::screens::form" {
+    APP_STATE="{\"person\": {\"name\":\"nobody\"}}"
+    screen='
+    {
+        "type": "form",
+        "dialog": {
+            "title": "Person Form",
+            "insecure": true
+        },
+        "capture_into": "person",
+        "properties": {
+            "items": [
+                {
+                    "name": "Name:",
+                    "required": true,
+                    "length": 40
+                },
+                {
+                    "name": "Age:",
+                    "length": 3
+                },
+                {
+                    "name": "Password:",
+                    "required": true,
+                    "length": 12,
+                    "max": 32,
+                    "type": 2
+                }
+            ]
+        }
+    }'
+    local expected_cmd="dialog --insecure --title Person Form --mixedform  0 0 5 *Name: 1 1 nobody 1 12 40 40 0  Age: 2 1  2 12 3 3 0 *Password: 3 1  3 12 12 32 2"
+    local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
+    assert [ "$expected_cmd" = "$actual_cmd" ]
+}
+
 @test "wheel::screens::custom" {
     screen='
     {

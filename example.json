@@ -86,6 +86,10 @@
                         "description": "Select a value by range"
                     },
                     {
+                        "name": "Complex Form",
+                        "description": "Complex form for the entry"
+                    },
+                    {
                         "name": "Select File",
                         "description": "Allows the ability to select a file"
                     }
@@ -210,6 +214,44 @@
                 "width": 70
             },
             "handlers": {
+                "ok": "wheel::cancel_handler"
+            }
+        },
+        "Complex Form": {
+            "type": "form",
+            "dialog": {
+                "title": "Address Form",
+                "colors": true
+            },
+            "capture_into": "address",
+            "properties": {
+                "items": [
+                    {
+                        "name": "Street:",
+                        "required": true,
+                        "length": 40,
+                        "configures": "street"
+                    },
+                    {
+                        "name": "City:",
+                        "length": 20,
+                        "configures": "city"
+                    },
+                    {
+                        "name": "State:",
+                        "required": true,
+                        "length": 15,
+                        "configures": "state"
+                    },
+                    {
+                        "name": "Zip Code:",
+                        "length": 10,
+                        "configures": "zipcode"
+                    }
+                ]
+            },
+            "handlers": {
+                "capture_into": "wheel::screens::form::save",
                 "ok": "wheel::cancel_handler"
             }
         },
