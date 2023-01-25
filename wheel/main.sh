@@ -12,11 +12,6 @@ DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/utils/module.sh
 
 
-# TODO: below
-# screen_generator
-# item_generator
-# mixedgauge (dep on item_generator)
-# state interpolation
 INPUT_SOURCE=""
 CURRENT_SCREEN=""
 EXIT_SCREEN=""
@@ -112,22 +107,20 @@ function wheel::main_loop() {
 }
 
 function wheel::inclusion() {
-    if [ "$(wheel::json::get "$json_source" 'includes | length')" -gt 0 ]; then
-        local inclusion
-        local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]" -c)
-        for inclusion in $inclusions; do
-            local file; file=$(wheel::json::get "$inclusion" "file")
-            local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
-            if [ ! -f "$directory/$file" ]; then
-                wheel::log::warn "Tried to include $directory/$file, but it does not exist"
-                continue
-            fi
-            wheel::log::trace "Including $directory/$file"
-            # shellcheck source=examples/application.sh
-            . "$directory/$file"
-            wheel::log::trace "Inclusion exits with $?"
-        done
-    fi
+    local inclusion
+    local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]?" -c)
+    for inclusion in $inclusions; do
+        local file; file=$(wheel::json::get "$inclusion" "file")
+        local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
+        if [ ! -f "$directory/$file" ]; then
+            wheel::log::warn "Tried to include $directory/$file, but it does not exist"
+            continue
+        fi
+        wheel::log::trace "Including $directory/$file"
+        # shellcheck source=examples/application.sh
+        . "$directory/$file"
+        wheel::log::trace "Inclusion exits with $?"
+    done
 }
 
 function wheel::main() {
@@ -143,10 +136,9 @@ function wheel::main() {
     wheel::events::add_clean_up "rm $answer_file"
     wheel::events::add_clean_up "wheel::state::flush"
     wheel::inclusion
-    # TODO: Handle these settings more gracefully
-    EXIT_SCREEN=$(wheel::json::get "$json_source" "exit")
+    EXIT_SCREEN=$(wheel::json::get_or_default "$json_source" "exit" "")
+    ERROR_SCREEN=$(wheel::json::get_or_default "$json_source" "error" "")
     CURRENT_SCREEN=$(wheel::json::get "$json_source" "start")
-    ERROR_SCREEN=$(wheel::json::get "$json_source" "error")
     wheel::log::debug "Exit screen: $EXIT_SCREEN"
     wheel::log::debug "Start screen: $CURRENT_SCREEN"
     wheel::log::debug "Error screen: $ERROR_SCREEN"

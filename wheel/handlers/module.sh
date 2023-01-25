@@ -2,7 +2,7 @@
 
 function wheel::handlers::ok() {
     [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ] && return 1
-    wheel::stack::push "${next_screen:?}"
+    wheel::stack::push "${next_screen:-""}"
 }
 
 function wheel::handlers::cancel() {
@@ -10,7 +10,7 @@ function wheel::handlers::cancel() {
         wheel::stack::push "$back_screen"
         return 0
     fi
-    if wheel::stack::empty; then
+    if wheel::stack::empty && [ -n "$EXIT_SCREEN" ]; then
         wheel::stack::push "$EXIT_SCREEN"
         return 0
     fi

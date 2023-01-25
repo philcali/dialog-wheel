@@ -187,6 +187,7 @@ function wheel::screens::_parse_menu_options() {
 function wheel::screens::_list_type() {
     local menu_height; menu_height=$(wheel::json::get_or_default "$screen" "properties.box_height" "5")
     local menu_options
+    [ -n "$extra_items" ] && menu_options=("${extra_items[@]}")
     wheel::screens::_parse_menu_options menu_options "${2:-$1}"
     wheel::log::debug "Menu options for $CURRENT_SCREEN: ${menu_options[*]}"
     "${DIALOG[@]}" \

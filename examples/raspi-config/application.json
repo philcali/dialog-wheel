@@ -52,6 +52,9 @@
                         "description": "Information about this configuration tool"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
             }
         },
         "1 System Options": {
@@ -98,6 +101,9 @@
                         "description": "Set behavior of power LED"
                     }
                 ]
+            },
+            "handlers": {
+                "ok": "wheel::screens::hub::selection"
             }
         },
         "2 Display Options": {
