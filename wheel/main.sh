@@ -14,7 +14,6 @@ DIR=$(dirname "$(realpath "$0")")
 # TODO: below
 # handlers module
 # item_generator
-# form (as a mixed one)
 # mixedgauge (dep on item_generator)
 # state interpolation
 INPUT_SOURCE=""

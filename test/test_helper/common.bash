@@ -10,3 +10,11 @@ wheel::test::setup() {
     # make executables in src/ visible to PATH
     PATH="$PROJECT_ROOT/src:$PATH"
 }
+
+wheel::test::gauge_managed_one() {
+    echo "one"
+}
+
+wheel::test::gauge_managed_two() {
+    echo "two"
+}

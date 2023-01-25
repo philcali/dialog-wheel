@@ -123,13 +123,34 @@ function wheel::screens::calendar() {
 
 function wheel::screens::_parse_menu_options() {
     local -n ref=$1
+    local action_items
+    local index
     local old_ifs=$IFS
     IFS=$'\n'
-    for item in $(wheel::json::get "$screen" "properties.items[]?" -c); do
-        local item_name; item_name=$(wheel::json::get "$item" "name")
+    mapfile -t action_items < <(wheel::json::get "$screen" "properties.items[]?" -c)
+    for index in "${!action_items[@]}"; do
+        local item="${action_items[$index]}"
         local item_caps; item_caps=$(wheel::json::get_or_default "$item" "configures" "")
         local item_desc; item_desc=$(wheel::json::get_or_default "$item" "description" "")
         local item_reqs; item_reqs=$(wheel::json::get_or_default "$item" "required" "false")
+        local item_name; item_name=$(wheel::json::get "$item" "name")
+        if [ "$2" = "form" ]; then
+            local prefix=" "
+            [ "$item_reqs" = "true" ] && prefix="*"
+            item_name="$prefix$item_name"
+            local item_len; item_len=$(wheel::json::get_or_default "$item" "length" "10")
+            local item_max; item_max=$(wheel::json::get_or_default "$item" "max" "$item_len")
+            local item_typ; item_typ=$(wheel::json::get_or_default "$item" "type" "0")
+            ref+=("$item_name" "$((index + 1))" "1")
+            [ -z "$item_caps" ] && item_caps=$(wheel::screens::_default_item_configures "$item_name")
+            ref+=("$(wheel::state::get "$capture_into.$item_caps")")
+            ref+=("$((index + 1))")
+            ref+=("$item_col")
+            ref+=("$item_len")
+            ref+=("$item_max")
+            ref+=("$item_typ")
+            continue
+        fi
         if [ -n "$item_caps" ] && [ "$2" = "menu" ]; then
             local prefix
             if [ -n "$(wheel::state::get "$item_caps")" ]; then
@@ -221,7 +242,7 @@ function wheel::screens::checklist::field() {
 
 function wheel::screens::_file_type() {
     local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
-    text_file=$(wheel::state::interpolate "$text_file")
+    [ -n "$text_file" ] && text_file=$(wheel::state::interpolate "$text_file")
     [ ! -f "$text_file" ] && exit "$DIALOG_ERROR"
     "${DIALOG[@]}" \
         "${dialog_options[@]}" \
@@ -258,6 +279,55 @@ function wheel::screens::range() {
         "${prop_opts[@]}"
 }
 
+function wheel::screens::_invoke_gauge_action() {
+    local log_prefix="[$CURRENT_SCREEN][$i][$action]"
+    (
+        {
+            "$action" 2>&1 1>&3 3>&- |
+            wheel::log::stream wheel::log::error "$log_prefix"
+            exit "${PIPESTATUS[0]}"
+        } 3>&1 1>&2 |
+        wheel::log::stream wheel::log::info "$log_prefix"
+        exit "${PIPESTATUS[0]}"
+    )
+}
+
+function wheel::screens::_default_form_box_width() {
+    local n; n=$(wheel::json::get "$screen" "properties.items[]?.name" |
+        xargs -I '{}' bash -c 'echo {} | wc -c' |
+        sort |
+        head -n1)
+    echo "$((n + 2))"
+}
+
+function wheel::screens::_default_item_configures() {
+    echo "$1" |
+    tr -d "[:space:][:punct:]" |
+    tr "[:upper:]" "[:lower:]"
+}
+
+function wheel::screens::form() {
+    local item_col
+    item_col=$(wheel::json::get_or_default "$screen" "properties.box_width" "$(wheel::screens::_default_form_box_width)")
+    wheel::screens::_list_type "mixedform" "form"
+}
+
+function wheel::screens::form::save() {
+    local field
+    local index
+    local value_arr
+    local field_arr
+    mapfile -t value_arr <<< "$@"
+    mapfile -t field_arr < <(wheel::json::get "$screen" "properties.items[]?" -c)
+    for index in "${!field_arr[@]}"; do
+        field="${field_arr[$index]}"
+        local item_name; item_name=$(wheel::json::get "$field" "name")
+        local item_caps; item_caps=$(wheel::json::get_or_default "$field" "configures" "")
+        [ -z "$item_caps" ] && item_caps=$(wheel::screens::_default_item_configures "$item_name")
+        wheel::state::set "${capture_into}.${item_caps}" "${value_arr[$index]}"
+    done
+}
+
 function wheel::screens::gauge() {
     local screen_label; screen_label=$(wheel::json::get_or_default "$screen" "properties.text" "In progress. Please wait.")
     local actions=()
@@ -282,11 +352,7 @@ function wheel::screens::gauge() {
                 echo "$percentage"
                 echo "$label"
                 echo "XXX"
-                local log_prefix="[$CURRENT_SCREEN][$i][$action]"
-                ({  "$action" 2>&1 1>&3 3>&- | wheel::log::stream wheel::log::error "$log_prefix"; exit "${PIPESTATUS[0]}"; } 3>&1 1>&2 | wheel::log::stream wheel::log::info "$log_prefix"; exit "${PIPESTATUS[0]}")
-                local action_exit=$?
-                wheel::log::debug "Action exits with $action_exit"
-                if [ $action_exit -ne 0 ]; then
+                if ! wheel::screens::_invoke_gauge_action; then
                     exit "$DIALOG_ERROR"
                 fi
             done
@@ -298,8 +364,10 @@ function wheel::screens::gauge() {
         return "${PIPESTATUS[0]}"
     else
         (
-            for action in "${actions[@]}"; do
-                wheel::log::info "Invoking $CURRENT_SCREEN action $action"
+            for i in "${!actions[@]}"; do
+                local action="${actions[$i]}"
+                local log_prefix="[$CURRENT_SCREEN][$i][$action]"
+                wheel::log::info "$log_prefix Starting invocation"
                 "$action" || exit "$DIALOG_ERROR"
             done
         ) |
