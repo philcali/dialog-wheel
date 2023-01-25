@@ -90,6 +90,10 @@
                         "description": "Complex form for the entry"
                     },
                     {
+                        "name": "Networks",
+                        "description": "Configure network devices"
+                    },
+                    {
                         "name": "Select File",
                         "description": "Allows the ability to select a file"
                     }
@@ -252,6 +256,26 @@
             },
             "handlers": {
                 "capture_into": "wheel::screens::form::save",
+                "ok": "wheel::handlers::cancel"
+            }
+        },
+        "Networks": {
+            "type": "custom",
+            "entrypoint": "application::example::networks",
+            "dialog": {
+                "title": "Select a Network"
+            },
+            "capture_into": "network",
+            "next": "Network Status"
+        },
+        "Network Status": {
+            "type": "custom",
+            "entrypoint": "application::example::network_status",
+            "dialog": {
+                "title": "Network Status",
+                "colors": true
+            },
+            "handlers": {
                 "ok": "wheel::handlers::cancel"
             }
         },
