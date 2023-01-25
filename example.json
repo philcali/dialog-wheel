@@ -14,10 +14,14 @@
         "Welcome": {
             "type": "msgbox",
             "dialog": {
-                "ok-label": "Continue"
+                "ok-label": "Continue",
+                "timeout": 3
             },
             "properties": {
                 "text": "This is some welcome text for the dialog box. Press Enter to begin."
+            },
+            "handlers": {
+                "timeout": "wheel::handlers::ok"
             },
             "next": "Main Menu"
         },
