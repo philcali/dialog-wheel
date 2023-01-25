@@ -2,6 +2,7 @@
 
 DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/constants.sh
+. "$DIR"/handlers/module.sh
 . "$DIR"/log/module.sh
 . "$DIR"/stack/module.sh
 . "$DIR"/json/module.sh
@@ -12,7 +13,7 @@ DIR=$(dirname "$(realpath "$0")")
 
 
 # TODO: below
-# handlers module
+# screen_generator
 # item_generator
 # mixedgauge (dep on item_generator)
 # state interpolation
@@ -49,50 +50,22 @@ function wheel::parse_args() {
     done
 }
 
-function wheel::ok_handler() {
-    [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ] && return 1
-    wheel::stack::push "$next_screen"
-}
-
-function wheel::cancel_handler() {
-    if [ -n "$back_screen" ]; then
-        wheel::stack::push "$back_screen"
-        return 0
-    fi
-    if wheel::stack::empty; then
-        wheel::stack::push "$EXIT_SCREEN"
-        return 0
-    fi
-    wheel::stack::pop
-}
-
-function wheel::capture_into_handler() {
-    wheel::state::set "$capture_into" "$value"
-}
-
-function wheel::clear_capture_handler() {
-    wheel::state::del "$capture_into"
-}
-
-function wheel::esc_handler() {
-    if [ "$CURRENT_SCREEN" = "$EXIT_SCREEN" ]; then
-        wheel::stack::pop
-        return 0
-    fi
-    wheel::stack::push "$EXIT_SCREEN"
-}
-
 function wheel::main_loop() {
     wheel::log::info "Starting Dialog Loop"
     local returncode=0
     while true; do
         [ "$(wheel::json::get "$json_source" "screens | has(\"$CURRENT_SCREEN\")")" = "false" ] && break
+        local value
+        local action
         local screen; screen=$(wheel::json::merge "$json_source" "$CURRENT_SCREEN" dialog properties handlers)
-        local next_screen; next_screen=$(wheel::json::get "$screen" "next")
-        local back_screen; back_screen=$(wheel::json::get_or_default "$screen" "back" "")
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
         local capture_into; capture_into=$(wheel::json::get_or_default "$screen" "capture_into" "")
-        local value
+        local next_screen
+        local back_screen
+        # shellcheck disable=SC2034 # next_screen left for documentation
+        next_screen=$(wheel::json::get_or_default "$screen" "next" "")
+        # shellcheck disable=SC2034 # back_screen left for documentation
+        back_screen=$(wheel::json::get_or_default "$screen" "back" "")
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
         # Allow trap
@@ -105,35 +78,31 @@ function wheel::main_loop() {
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
         case $returncode in
         "$DIALOG_OK")
-            local action
             if [ -n "$capture_into" ]; then
-                action=$(wheel::json::get_or_default "$screen" "handlers.capture_into" "wheel::capture_into_handler")
+                action=$(wheel::json::get_or_default "$screen" "handlers.capture_into" "wheel::handlers::capture_into")
                 "$action" "$value"
             fi
-            action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::ok_handler")
+            action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::handlers::ok")
             "$action" "$value" || break
             ;;
         "$DIALOG_CANCEL")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::cancel_handler")
+            action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::handlers::cancel")
             "$action" || break
             ;;
         "$DIALOG_HELP")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlers.help" "wheel::cancel_handler")
+            action=$(wheel::json::get_or_default "$screen" "handlers.help" "wheel::handlers::cancel")
             "$action" || break
             ;;
         "$DIALOG_EXTRA")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlers.extra" "wheel::cancel_handler")
+            action=$(wheel::json::get_or_default "$screen" "handlers.extra" "wheel::handlers::cancel")
             "$action" || break
             ;;
         "$DIALOG_ERROR"|"$DIALOG_NOT_FOUND")
-            # An error occurred on the CURRENT_SCREEN
-            # This means we pop it out, push our error handler
-            # TODO: make this a handler
-            wheel::stack::pop
-            wheel::stack::push "$ERROR_SCREEN"
+            action=$(wheel::json::get_or_default "$screen" "handlers.error" "wheel::handlers::error")
+            "$action" || break
             ;;
         "$DIALOG_ESC")
-            local action; action=$(wheel::json::get_or_default "$screen" "handlers.esc" "wheel::esc_handler")
+            action=$(wheel::json::get_or_default "$screen" "handlers.esc" "wheel::handlers::esc")
             "$action" || break
             ;;
         esac

@@ -108,7 +108,7 @@ function wheel::screens::files::select() {
         wheel::state::set "$capture_into" "$selection/"
     fi
     if [ -f "$selection" ]; then
-        wheel::ok_handler "$selection"
+        wheel::handlers::ok "$selection"
     fi
 }
 
@@ -212,7 +212,7 @@ function wheel::screens::hub::selection() {
     wheel::log::trace "Previous next screen was $next_screen"
     [ -n "$1" ] && next_screen=$1
     wheel::log::trace "Selected next screen is $next_screen"
-    wheel::ok_handler
+    wheel::handlers::ok
 }
 
 function wheel::screens::checklist::list() {
@@ -262,7 +262,7 @@ function wheel::screens::editor::save() {
     local text_file; text_file=$(wheel::json::get_or_default "$screen" "properties.text" "")
     text_file=$(wheel::state::interpolate "$text_file")
     cp "$answer_file" "$text_file"
-    wheel::ok_handler
+    wheel::handlers::ok
 }
 
 function wheel::screens::range() {

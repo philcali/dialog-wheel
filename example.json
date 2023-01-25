@@ -128,7 +128,7 @@
                 ]
             },
             "handlers": {
-                "ok": "wheel::cancel_handler",
+                "ok": "wheel::handlers::cancel",
                 "capture_into": "wheel::screens::checklist::list"
             }
         },
@@ -164,7 +164,7 @@
                 ]
             },
             "handlers": {
-                "ok": "wheel::cancel_handler",
+                "ok": "wheel::handlers::cancel",
                 "capture_into": "wheel::screens::checklist::field"
             }
         },
@@ -197,7 +197,7 @@
                 ]
             },
             "handlers": {
-                "ok": "wheel::cancel_handler"
+                "ok": "wheel::handlers::cancel"
             }
         },
         "Range": {
@@ -214,7 +214,7 @@
                 "width": 70
             },
             "handlers": {
-                "ok": "wheel::cancel_handler"
+                "ok": "wheel::handlers::cancel"
             }
         },
         "Complex Form": {
@@ -252,7 +252,7 @@
             },
             "handlers": {
                 "capture_into": "wheel::screens::form::save",
-                "ok": "wheel::cancel_handler"
+                "ok": "wheel::handlers::cancel"
             }
         },
         "Select File": {
@@ -264,7 +264,7 @@
             },
             "handlers": {
                 "ok": "wheel::screens::files::select",
-                "extra": "wheel::clear_capture_handler"
+                "extra": "wheel::handlers::clear_capture"
             },
             "next": "Read File",
             "back": "Form Menu"
@@ -392,7 +392,7 @@
                     "application::example::validate"
                 ]
             },
-            "next":"Validation Result"
+            "next": "Validation Result"
         },
         "Validate Managed": {
             "type": "gauge",
@@ -501,7 +501,7 @@
                 "height": 7
             },
             "handlers": {
-                "ok": "wheel::cancel_handler"
+                "ok": "wheel::handlers::cancel"
             }
         }
     },
