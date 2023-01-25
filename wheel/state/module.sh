@@ -36,15 +36,16 @@ function wheel::state::set() {
     shift 2
     local rest=("$@")
 
-    local state; state=$(wheel::json::set "$APP_STATE" "$key" "$value" "${rest[@]}")
+    local state
+    state=$(wheel::json::set "$APP_STATE" "$key" "$value" "${rest[@]}") || return $?
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
 }
 
 function wheel::state::del() {
-    local key=$2
-
-    local state; state=$(wheel::json::del "$APP_STATE" "$key")
+    local key=$1
+    local state
+    state=$(wheel::json::del "$APP_STATE" "$key") || return $?
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
 }

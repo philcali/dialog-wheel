@@ -49,7 +49,6 @@ setup() {
 
 @test "wheel::state::del" {
     function wheel::json::del() {
-        echo "{}"
         [ "$1" = "$APP_STATE" ] && [ "$2" = "field" ]
     }
 

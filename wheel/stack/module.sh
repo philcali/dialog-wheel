@@ -3,7 +3,7 @@
 SCREEN_STACK=()
 
 function wheel::stack::push() {
-    [ -z "$1" ] && return
+    [ -z "$1" ] && return 0
     SCREEN_STACK=("$CURRENT_SCREEN" "${SCREEN_STACK[@]}")
     CURRENT_SCREEN="$1"
 }
