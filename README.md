@@ -30,13 +30,19 @@ recommend the following:
 
 ___Using Git__
 ```
-git clone https://github.com/philcali/dialog-wheel.git && ./dev.build.sh && {
-  IFS=':' read -r -a <<< "$PATH"
+git clone https://github.com/philcali/dialog-wheel.git && cd dialog-wheel && ./dev.build.sh && {
+  IFS=':' read -r -a paths <<< "$PATH"
   for path in "${paths[@]}"
   do
     mv dialog-wheel "$path/" && echo "Installed dialog-wheel in $path" && break
   done
 } || echo >&2 "Failed to install dialog-wheel"
+```
+
+If you feel like removing it, then it's as easy as:
+
+```
+rm $(which dialog-wheel)
 ```
 
 ## How do I test this?
