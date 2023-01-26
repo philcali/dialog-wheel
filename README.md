@@ -22,6 +22,23 @@ for dialog single page displays.
 - `bc`
 - `python3` (Optional for yaml support)
 
+## How do I install it?
+
+The example includes a `Dockerfile` for testing the application. If you want
+to install the script to be invoked somewhere in your `PATH`, then I would
+recommend the following:
+
+___Using Git__
+```
+git clone https://github.com/philcali/dialog-wheel.git && ./dev.build.sh && {
+  IFS=':' read -r -a <<< "$PATH"
+  for path in "${paths[@]}"
+  do
+    mv dialog-wheel "$path/" && echo "Installed dialog-wheel in $path" && break
+  done
+} || echo >&2 "Failed to install dialog-wheel"
+```
+
 ## How do I test this?
 
 
