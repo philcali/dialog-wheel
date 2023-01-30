@@ -61,6 +61,7 @@ function wheel::app::_run() {
     while true; do
         [ "$(wheel::json::get "$json_source" "screens | has(\"$CURRENT_SCREEN\")")" = "false" ] && break
         local value
+        local single_arg=1
         local action
         local screen; screen=$(wheel::json::merge "$json_source" "$CURRENT_SCREEN" dialog properties handlers)
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
@@ -79,16 +80,25 @@ function wheel::app::_run() {
         wait $ACTIVE_DIALOG
         returncode=$?
         ACTIVE_DIALOG=""
-        value=$(cat "$answer_file")
-        wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, value $value"
+        # dialog does something weird here... if the answer is a spaced arg
+        # Then it will quote it "sometimes"... here we account for that
+        # Unfortunately this parsing hint needs to be passed to the
+        # capture handlers
+        if grep '"' < "$answer_file" 2>&1 >/dev/null; then
+            IFS=$'\n' value=("$(xargs -n1 < "$answer_file")")
+            single_arg=0
+        else
+            value=("$(<"$answer_file")")
+        fi
+        wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, single arg: $single_arg value ${value[*]}"
         case $returncode in
         "$DIALOG_OK")
             if [ -n "$capture_into" ]; then
                 action=$(wheel::json::get_or_default "$screen" "handlers.capture_into" "wheel::handlers::capture_into")
-                "$action" "$value"
+                "$action" "${value[@]}"
             fi
             action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::handlers::ok")
-            "$action" "$value" || break
+            "$action" "${value[@]}" || break
             ;;
         "$DIALOG_CANCEL")
             action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::handlers::cancel")

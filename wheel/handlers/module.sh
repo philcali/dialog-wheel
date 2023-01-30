@@ -17,6 +17,10 @@ function wheel::handlers::cancel() {
     wheel::stack::pop
 }
 
+function wheel::handlers::noop() {
+    wheel::log::debug "No-op handler called for $CURRENT_SCREEN"
+}
+
 function wheel::handlers::capture_into() {
     wheel::state::set "${capture_into:?}" "${value:-""}"
 }

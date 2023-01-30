@@ -512,7 +512,7 @@
         "Exit": {
             "type": "yesno",
             "dialog": {
-                "erase-on-exit": true
+                "clear": true
             },
             "properties": {
                 "text": "Are you sure you want to exit?"
