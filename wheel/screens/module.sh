@@ -219,7 +219,11 @@ function wheel::screens::hub::selection() {
 function wheel::screens::checklist::list() {
     local index
     local value_arr
-    read -r -a value_arr <<< "$@"
+    if [ -n "$single_arg" ] && [ "$single_arg" -eq 1 ]; then
+        read -r -a value_arr <<< "$@"
+    else
+        mapfile -t value_arr <<< "$@"
+    fi
     for index in "${!value_arr[@]}"; do
         wheel::state::set "${capture_into:?}[$index]" "${value_arr[$index]}"
     done
@@ -229,7 +233,11 @@ function wheel::screens::checklist::field() {
     local field
     local reset
     local value_arr
-    read -r -a value_arr <<< "$@"
+    if [ -n "$single_arg" ] && [ "$single_arg" -eq 1 ]; then
+        read -r -a value_arr <<< "$@"
+    else
+        mapfile -t value_arr <<< "$@"
+    fi
     for reset in $(wheel::json::get "$screen" "properties.items[]?.configures" -c -r); do
         wheel::state::set "$reset" false "argjson"
     done

@@ -28,7 +28,7 @@ The example includes a `Dockerfile` for testing the application. If you want
 to install the script to be invoked somewhere in your `PATH`, then I would
 recommend the following:
 
-___Using Git__
+__Using Git__
 ```
 git clone https://github.com/philcali/dialog-wheel.git && cd dialog-wheel && ./dev.build.sh && {
   IFS=':' read -r -a paths <<< "$PATH"

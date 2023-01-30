@@ -22,6 +22,7 @@ function wheel::events::kill_active_dialog() {
 
 function wheel::events::add_clean_up() {
     local action=$1
+    wheel::log::debug "Adding $action to clean-up"
     CLEANUP_QUEUE+=("$action")
 }
 
