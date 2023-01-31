@@ -302,9 +302,17 @@ function wheel::screens::_invoke_gauge_action() {
 }
 
 function wheel::screens::_default_form_box_width() {
+    # In the absence of defined width:
+    # we count the label length
+    # pad with 0
+    # sort descending
+    # unpad zeros
+    # grab the highest with a spacing buffer
     local n; n=$(wheel::json::get "$screen" "properties.items[]?.name" |
         xargs -I '{}' bash -c 'echo {} | wc -c' |
-        sort |
+        xargs -I '{}' printf '%05d\n' {} |
+        sort -r |
+        sed -e 's|^0*||' |
         head -n1)
     echo "$((n + 2))"
 }

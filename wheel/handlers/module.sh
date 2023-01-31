@@ -22,11 +22,24 @@ function wheel::handlers::noop() {
 }
 
 function wheel::handlers::capture_into() {
-    wheel::state::set "${capture_into:?}" "${value:-""}"
+    local arg=${1:-"arg"}
+    wheel::state::set "${capture_into:?}" "${value:-""}" "$arg"
 }
 
 function wheel::handlers::clear_capture() {
     wheel::state::del "$capture_into"
+}
+
+function wheel::handlers::capture_into::argjson() {
+    wheel::handlers::capture_into argjson
+}
+
+function wheel::handlers::flag() {
+    local toggle=true
+    if [ "${returncode:-0}" -eq 1 ]; then
+        toggle=false
+    fi
+    wheel::state::set "$capture_into" "$toggle" argjson
 }
 
 function wheel::handlers::esc() {
