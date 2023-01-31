@@ -22,8 +22,7 @@ function wheel::handlers::noop() {
 }
 
 function wheel::handlers::capture_into() {
-    local arg=${1:-"arg"}
-    wheel::state::set "${capture_into:?}" "${value:-""}" "$arg"
+    wheel::state::set "${capture_into:?}" "${value:-""}"
 }
 
 function wheel::handlers::clear_capture() {
@@ -31,7 +30,7 @@ function wheel::handlers::clear_capture() {
 }
 
 function wheel::handlers::capture_into::argjson() {
-    wheel::handlers::capture_into argjson
+    wheel::state::set "${capture_into:?}" "${value:-""}" argjson
 }
 
 function wheel::handlers::flag() {
