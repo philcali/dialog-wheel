@@ -61,8 +61,10 @@ function wheel::app::_run() {
     while true; do
         [ "$(wheel::json::get "$json_source" "screens | has(\"$CURRENT_SCREEN\")")" = "false" ] && break
         local value
-        local single_arg=1
         local action
+        local action_name
+        local action_names=()
+        local single_arg=1
         local screen; screen=$(wheel::json::merge "$json_source" "$CURRENT_SCREEN" dialog properties handlers)
         local clear_history; clear_history=$(wheel::json::get_or_default "$screen" "clear_history" "false")
         local capture_into; capture_into=$(wheel::json::get_or_default "$screen" "capture_into" "")
@@ -94,37 +96,45 @@ function wheel::app::_run() {
         case $returncode in
         "$DIALOG_OK")
             if [ -n "$capture_into" ]; then
-                action=$(wheel::json::get_or_default "$screen" "handlers.capture_into" "wheel::handlers::capture_into")
-                "$action" "${value[@]}"
+                action_names+=("capture_into")
             fi
-            action=$(wheel::json::get_or_default "$screen" "handlers.ok" "wheel::handlers::ok")
-            "$action" "${value[@]}" || break
+            action_names+=("ok")
             ;;
         "$DIALOG_CANCEL")
-            action=$(wheel::json::get_or_default "$screen" "handlers.cancel" "wheel::handlers::cancel")
-            "$action" || break
+            action_names+=("cancel")
             ;;
         "$DIALOG_TIMEOUT")
-            action=$(wheel::json::get_or_default "$screen" "handlers.timeout" "wheel::handlers::cancel")
-            "$action" || break
+            action_names+=("timeout")
             ;;
         "$DIALOG_HELP")
-            action=$(wheel::json::get_or_default "$screen" "handlers.help" "wheel::handlers::cancel")
-            "$action" || break
+            action_names+=("help")
             ;;
         "$DIALOG_EXTRA")
-            action=$(wheel::json::get_or_default "$screen" "handlers.extra" "wheel::handlers::cancel")
-            "$action" || break
+            action_names+=("extra")
             ;;
         "$DIALOG_ERROR"|"$DIALOG_NOT_FOUND")
-            action=$(wheel::json::get_or_default "$screen" "handlers.error" "wheel::handlers::error")
-            "$action" || break
+            action_names+=("error")
             ;;
         "$DIALOG_ESC")
-            action=$(wheel::json::get_or_default "$screen" "handlers.esc" "wheel::handlers::esc")
-            "$action" || break
+            action_names+=("esc")
             ;;
         esac
+        for action_name in "${action_names[@]}"; do
+            local is_array=false
+            for action in $(wheel::json::get_or_default "$screen" "handlers.${action_name}[]?" ""); do
+                is_array=true
+                "$action" "${value[@]}" || break 3
+            done
+            $is_array && continue
+            local default_action="wheel::handlers::$action_name"
+            case "$action_name" in
+                "help"|"extra"|"timeout")
+                    default_action="wheel::handlers::cancel"
+                    ;;
+            esac
+            action=$(wheel::json::get_or_default "$screen" "handlers.$action_name" "$default_action")
+            "$action" "${value[@]}" || break 2
+        done
     done
     wheel::log::debug "Last screen was $CURRENT_SCREEN"
     wheel::log::info "Exiting Dialog Loop"

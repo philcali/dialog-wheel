@@ -194,7 +194,7 @@ setup() {
 }
 
 @test "wheel::screens::checklist - read from fields" {
-    APP_STATE="{\"favorites\": {\"chocolate\": true}}"
+    APP_STATE="{\"favorites\": {\"chocolate\": true}, \"fables\": {\"bourbon\": false}}"
     screen='
     {
         "type": "checklist",
@@ -213,12 +213,13 @@ setup() {
                 {
                     "name": "Bourbon",
                     "description": "American whiskey",
-                    "configures": "favorites.bourbon"
+                    "configures": "favorites.bourbon",
+                    "depends": "fables.bourbon"
                 }
             ]
         }
     }'
-    local expected_cmd="dialog --title Favorite Things --checklist Select your favorite things: 0 0 5 Chocolate Needs no introduction on Bourbon American whiskey off"
+    local expected_cmd="dialog --title Favorite Things --checklist Select your favorite things: 0 0 5 Chocolate Needs no introduction on"
     local actual_cmd; actual_cmd=$(wheel::screens::new_screen "$screen" "$answer_file")
     assert [ "$expected_cmd" = "$actual_cmd" ]
 }
