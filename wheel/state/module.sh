@@ -50,12 +50,14 @@ function wheel::state::del() {
     APP_STATE=$state
 }
 
-# TODO: fix this
 function wheel::state::interpolate() {
     local input=$1
-    if [[ "$input" =~ ^\$state\. ]]; then
-        wheel::state::get "$(echo -n "$input" | sed "s|\$state.||")"
-    else
-        echo "$input"
+    local replacement=${2:-$capture_into}
+    # For backwards cap
+    if [ -z "$replacement" ]; then
+        replacement="${input/"\$state."/}"
     fi
+    local state_value
+    state_value="$(wheel::state::get "$replacement")"
+    echo "${input//"\$state.$replacement"/$state_value}"
 }

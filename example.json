@@ -79,6 +79,7 @@
                     },
                     {
                         "name": "2 Checklist",
+                        "depends": "some.flag",
                         "description": "A check list that flips fields"
                     },
                     {
@@ -100,6 +101,11 @@
                     {
                         "name": "Select File",
                         "description": "Allows the ability to select a file"
+                    },
+                    {
+                        "name": "Boolean",
+                        "configures": "some.flag",
+                        "description": "Make a yes/no set a value"
                     }
                 ]
             },
@@ -107,6 +113,24 @@
                 "ok": "wheel::screens::hub::selection"
             },
             "back": "Main Menu"
+        },
+        "Boolean": {
+            "type": "yesno",
+            "capture_into": "some.flag",
+            "dialog": {
+                "colors": true
+            },
+            "properties": {
+                "text": "Set this value?\nCurrent value: [\\Zb$state.some.flag\\ZB]"
+            },
+            "handlers": {
+                "cancel": [
+                    "wheel::handlers::flag",
+                    "wheel::handlers::cancel"
+                ],
+                "capture_into": "wheel::handlers::flag",
+                "ok": "wheel::handlers::cancel"
+            }
         },
         "1 Checklist": {
             "type": "checklist",

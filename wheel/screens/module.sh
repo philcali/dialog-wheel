@@ -48,7 +48,8 @@ function wheel::screens::_info_type() {
     "${DIALOG[@]}" \
         "${dialog_options[@]}" \
         --"$1" \
-        "$(wheel::json::get "$screen" "properties.text")" "$screen_height" "$screen_width"
+        "$(wheel::state::interpolate "$(wheel::json::get "$screen" "properties.text")")" \
+        "$screen_height" "$screen_width"
 }
 
 function wheel::screens::msgbox() {
@@ -132,8 +133,12 @@ function wheel::screens::_parse_menu_options() {
         local item="${action_items[$index]}"
         local item_caps; item_caps=$(wheel::json::get_or_default "$item" "configures" "")
         local item_desc; item_desc=$(wheel::json::get_or_default "$item" "description" "")
-        local item_reqs; item_reqs=$(wheel::json::get_or_default "$item" "required" "false")
+        local item_reqs; item_reqs=$(wheel::json::get_or_default "$item" "required" "")
+        local item_deps; item_deps=$(wheel::json::get_or_default "$item" "depends" "")
         local item_name; item_name=$(wheel::json::get "$item" "name")
+        if [ -n "$item_deps" ] && [ "$(wheel::state::get "$item_deps")" != "true" ]; then
+            continue
+        fi
         if [ "$2" = "form" ]; then
             local prefix=" "
             [ "$item_reqs" = "true" ] && prefix="*"
@@ -160,7 +165,7 @@ function wheel::screens::_parse_menu_options() {
             fi
             if [ "$item_reqs" = "true" ]; then
                 prefix+=" Required"
-            else
+            elif [ "$item_reqs" = "false" ]; then
                 prefix+=" Optional"
             fi
             item_desc="$prefix $item_desc"
