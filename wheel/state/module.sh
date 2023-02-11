@@ -55,7 +55,11 @@ function wheel::state::interpolate() {
     local replacement=${2:-$capture_into}
     # For backwards cap
     if [ -z "$replacement" ]; then
-        replacement="${input/"\$state."/}"
+        if [[ "$input" =~ ^\$state. ]]; then
+            replacement="${input/"\$state."/}"
+        else
+            echo "$input" && return 0
+        fi
     fi
     local state_value
     state_value="$(wheel::state::get "$replacement")"
