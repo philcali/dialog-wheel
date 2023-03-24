@@ -2,6 +2,14 @@
 
 DIALOG=("dialog")
 
+function wheel::screens::set_dialog_program() {
+    local current_program=("${DIALOG[@]}")
+    [ -n "$*" ] && DIALOG=("$@")
+    if ! command -v "${DIALOG[@]}" >/dev/null; then
+        DIALOG=("${current_program[@]}")
+    fi
+}
+
 function wheel::screens::new_screen() {
     local screen="$1"
     local answer_file="$2"
@@ -364,7 +372,7 @@ function wheel::screens::gauge() {
             for i in "${!actions[@]}"; do
                 local action="${actions[$i]}"
                 local label="Step $((i + 1)): $action"
-                if wheel::json::validate "$action"; then
+                if wheel::json::validate "$action" 2>/dev/null; then
                     label=$(wheel::json::get_or_default "$action" "label" "$label")
                     action=$(wheel::json::get "$action" "action")
                 fi

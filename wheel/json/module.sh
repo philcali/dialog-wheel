@@ -75,7 +75,7 @@ function wheel::json::validate() {
     local msg; msg=$(echo "$input" | jq 2>&1)
     # validation error code
     if [ $? -eq 4 ]; then
-        echo "$msg"
+        echo "$msg" >&2
         return 1
     fi
     return 0

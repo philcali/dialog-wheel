@@ -17,10 +17,28 @@ for dialog single page displays.
 
 ## What are wheel's dependencies?
 
-- `dialog`
+- `dialog` (Optional)
 - `jq`
 - `bc`
 - `python3` (Optional for yaml support)
+
+## What if I refuse to install dialog?
+
+The `dialog-wheel` framework will degrade to a pure bash TUI, whose
+entrypoint is the `wheel::dialog::app` function found in the `dialog` module,
+if the `dialog` program cannot be found on the `$PATH`. All other aspects
+of `dialog-wheel` still apply, including the `SIGINT` capture and error
+handlers and the static state machine. Note that `wheel::dialog::app` is
+meant to be __backup__ to a fully featured TUI program, so it's presentation
+is slightly improved over a traditionally `echo`'ed UI.
+
+## Wait... that means you support other TUI programs?
+
+Indeed. In the JSON definition for the state machine, `dialog.program` can
+reference a function or a command to replace all calls normally directed to
+`dialog`. The only caveat is that the program arguments match the `dialog`
+program interface. Perhaps in a future release, the calls will use its own
+abstraction, but for now that's an exercise for the reader.
 
 ## How do I install it?
 

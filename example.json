@@ -291,7 +291,8 @@
             "type": "custom",
             "entrypoint": "application::example::networks",
             "dialog": {
-                "title": "Select a Network"
+                "title": "Select a Network",
+                "cancel-button": true
             },
             "capture_into": "network",
             "next": "Network Status"

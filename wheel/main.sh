@@ -10,6 +10,7 @@ DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/screens/module.sh
 . "$DIR"/state/module.sh
 . "$DIR"/utils/module.sh
+. "$DIR"/dialog/module.sh
 . "$DIR"/app/module.sh
 
 wheel::app::init "$@"
