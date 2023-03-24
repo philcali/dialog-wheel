@@ -10,6 +10,7 @@ setup() {
     . wheel/handlers/module.sh
     . wheel/stack/module.sh
     . wheel/screens/module.sh
+    . wheel/dialog/module.sh
     . wheel/app/module.sh
 }
 
