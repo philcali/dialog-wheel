@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-TERM_WIDTH=$(tput cols || echo -n 80)
+TERM_WIDTH=""
 
 function wheel::dialog::app() {
+    [ -z "$TERM_WIDTH" ] && wheel::dialog::set_new_width
     local dialog_args
     wheel::dialog::_parse_args dialog_args "$@"
     clear
