@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 TERM_WIDTH=80
-[ -n "$TERM" ] && TERM_WIDTH="$(tput cols)"
+tput cols >/dev/null && TERM_WIDTH="$(tput cols)"
 
 function wheel::dialog::app() {
     local dialog_args
