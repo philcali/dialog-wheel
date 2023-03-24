@@ -11,10 +11,10 @@ function application::example::hello_world() {
 
 function application::example::validate() {
     for i in {0..9}; do
-        local precentage=$(((i + 1) * 10))
+        local percentage=$(((i + 1) * 10))
         echo "XXX"
-        echo "$precentage"
-        echo "Validating is %$precentage complete..."
+        echo "$percentage"
+        echo "Validating is $percentage% complete..."
         echo "XXX"
         sleep 1
     done

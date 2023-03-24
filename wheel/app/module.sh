@@ -57,6 +57,7 @@ function wheel::app::_inclusion() {
 
 function wheel::app::_run() {
     wheel::log::info "Starting Dialog Loop"
+    wheel::screens::set_dialog_program "$(wheel::json::get "$json_source" "dialog.program")"
     local returncode=0
     while true; do
         [ "$(wheel::json::get "$json_source" "screens | has(\"$CURRENT_SCREEN\")")" = "false" ] && break
