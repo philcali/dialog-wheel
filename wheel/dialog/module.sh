@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-TERM_WIDTH=""
+TERM_WIDTH="$(tput cols)"
 
 function wheel::dialog::app() {
-    [ -z "$TERM_WIDTH" ] && wheel::dialog::set_new_width
     local dialog_args
     wheel::dialog::_parse_args dialog_args "$@"
     clear
@@ -311,7 +310,9 @@ function wheel::dialog::_parse_args() {
         case "$param" in
         "--yesno")
             [ "${buttons[0]}" = "OK" ] && buttons[0]="Yes"
-            [ "${buttons[1]}" = "" ] && buttons[1]="No"
+            [ "${buttons[1]}" = "" ] && buttons[1]="No";;
+        "--radiolist"|"--checklist"|"--menu"|"--mixedform"|"--inputbox"|"--passwordbox"|"--rangebox"|"--calendar")
+            [ "${buttons[1]}" = "" ] && buttons[1]="Cancel";;
         esac
         case "$param" in
         "--yesno"|"--infobox"|"--msgbox"|"--mixedform"|"--rangebox"|"--gauge"|"--menu"|"--checklist"|"--radiolist"|"--inputbox"|"--passwordbox"|"--calendar")

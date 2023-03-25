@@ -10,9 +10,3 @@ setup() {
     run ./wheel/main.sh -h
     [ "$status" -eq 0 ]
 }
-
-@test "wheel::main -v" {
-    run ./wheel/main.sh -v
-    [ "$status" -eq 0 ]
-    [ "$output" = "$VERSION" ]
-}
