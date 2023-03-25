@@ -43,7 +43,11 @@ function wheel::app::_inclusion() {
     local inclusions; inclusions=$(wheel::json::get "$json_source" "includes[]?" -c)
     for inclusion in $inclusions; do
         local file; file=$(wheel::json::get "$inclusion" "file")
-        local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "$CWD")
+        local directory; directory=$(wheel::json::get_or_default "$inclusion" "directory" "")
+        [ -z "$directory" ] && {
+            directory=$(dirname "$(realpath "$file")")
+            file=$(basename "$(realpath "$file")")
+        }
         if [ ! -f "$directory/$file" ]; then
             wheel::log::warn "Tried to include $directory/$file, but it does not exist"
             continue
