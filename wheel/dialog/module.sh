@@ -264,6 +264,15 @@ function wheel::dialog::mixedform() {
     done
 }
 
+function wheel::dialog::textbox() {
+    wheel::dialog::_header "$1" "$2"
+    cat "$7"
+    wheel::dialog::_modal_footer "$@"
+    local resp
+    read -r -u 1 resp
+    wheel::dialog::_button_handle "$resp" || return "$?"
+}
+
 function wheel::dialog::gauge() {
     local line
     local progress
@@ -315,7 +324,7 @@ function wheel::dialog::_parse_args() {
             [ "${buttons[1]}" = "" ] && buttons[1]="Cancel";;
         esac
         case "$param" in
-        "--yesno"|"--infobox"|"--msgbox"|"--mixedform"|"--rangebox"|"--gauge"|"--menu"|"--checklist"|"--radiolist"|"--inputbox"|"--passwordbox"|"--calendar")
+        "--textbox"|"--yesno"|"--infobox"|"--msgbox"|"--mixedform"|"--rangebox"|"--gauge"|"--menu"|"--checklist"|"--radiolist"|"--inputbox"|"--passwordbox"|"--calendar")
             shift
             text_props+=("$@")
             options+=("wheel::dialog::${param/"--"/}")
@@ -344,6 +353,9 @@ function wheel::dialog::_parse_args() {
         "--help-label")
             shift
             buttons[3]="$1";;
+        "--exit-label")
+            shift
+            buttons[0]="$1";;
         "--cancel-button")
             [ "${buttons[1]}" = "" ] && buttons[1]="Cancel"
             ;;
