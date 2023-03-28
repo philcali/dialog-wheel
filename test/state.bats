@@ -5,6 +5,7 @@ setup() {
     wheel::test::setup
     . wheel/constants.sh
     . wheel/state/module.sh
+    . wheel/events/module.sh
     . wheel/log/module.sh
 }
 

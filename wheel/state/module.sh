@@ -37,17 +37,27 @@ function wheel::state::set() {
     local rest=("$@")
 
     local state
+    local previous_value
+    previous_value=$(wheel::json::get "$APP_STATE" "$key")
     state=$(wheel::json::set "$APP_STATE" "$key" "$value" "${rest[@]}") || return $?
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
+    if [ "$previous_value" != "$(wheel::json::get "$state" "$key")" ]; then
+        wheel::events::fire "state_change" "$key" "$previous_value"
+    fi
 }
 
 function wheel::state::del() {
     local key=$1
     local state
+    local previous_value
+    previous_value=$(wheel::json::get "$APP_STATE" "$key")
     state=$(wheel::json::del "$APP_STATE" "$key") || return $?
     wheel::log::debug "Setting state to: $state"
     APP_STATE=$state
+    if [ "$previous_value" != "$(wheel::json::get "$state" "$key")" ]; then
+        wheel::events::fire "state_change" "$key" "$previous_value"
+    fi
 }
 
 function wheel::state::interpolate() {
