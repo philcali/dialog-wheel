@@ -84,3 +84,11 @@ function application::example::step_five() {
     sleep 1
     echo "Authorizing..."
 }
+
+function application::example::update_backtitle() {
+    local key=$1
+    [ "$key" = "name" ] &&
+    json_source="$(wheel::json::set "$json_source" "dialog.backtitle" "New Title - $(date)")"
+}
+
+wheel::events::add_state_change application::example::update_backtitle
