@@ -9,10 +9,14 @@ function wheel::dialog::app() {
     "${dialog_args[@]}"
 }
 
+function wheel::dialog::_strip_colors() {
+    echo "$1" | sed -e 's|\\Z.||g'
+}
+
 function wheel::dialog::_header() {
     local width
     [ -n "$1" ] && {
-        width=$(echo -n "$1" | wc -c)
+        width=$(echo -n "$(wheel::dialog::_strip_colors "$1")" | wc -c)
         echo "$1"
         for _ in $(seq 1 "$TERM_WIDTH"); do
             echo -n "#"
@@ -20,7 +24,7 @@ function wheel::dialog::_header() {
         echo
     }
     [ -n "$2" ] && {
-        width=$(echo -n "$2" | wc -c)
+        width=$(echo -n "$(wheel::dialog::_strip_colors "$2")" | wc -c)
         echo
         for _ in $(seq 0 "$(((TERM_WIDTH / 2) - (width + 2)))"); do
             echo -n "-"
@@ -56,7 +60,7 @@ function wheel::dialog::_button_handle() {
 function wheel::dialog::_modal_header() {
     local text=$7
     wheel::dialog::_header "$1" "$2"
-    echo "$text"
+    wheel::dialog::_strip_colors "$text"
 }
 
 function wheel::dialog::_modal_footer() {
