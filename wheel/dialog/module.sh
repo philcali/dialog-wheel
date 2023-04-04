@@ -15,21 +15,24 @@ function wheel::dialog::_strip_colors() {
 
 function wheel::dialog::_header() {
     local width
+    local text
     [ -n "$1" ] && {
-        width=$(echo -n "$(wheel::dialog::_strip_colors "$1")" | wc -c)
-        echo "$1"
+        text=$(wheel::dialog::_strip_colors "$1")
+        width=$(echo -n "$text" | wc -c)
+        echo "$text"
         for _ in $(seq 1 "$TERM_WIDTH"); do
             echo -n "#"
         done
         echo
     }
     [ -n "$2" ] && {
-        width=$(echo -n "$(wheel::dialog::_strip_colors "$2")" | wc -c)
+        text=$(wheel::dialog::_strip_colors "$2")
+        width=$(echo -n "$text" | wc -c)
         echo
         for _ in $(seq 0 "$(((TERM_WIDTH / 2) - (width + 2)))"); do
             echo -n "-"
         done
-        echo -n "[  $2  ]"
+        echo -n "[  $text  ]"
         for _ in $(seq 0 "$(((TERM_WIDTH / 2) - (width + 2)))"); do
             echo -n "-"
         done
