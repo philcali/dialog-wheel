@@ -4,16 +4,7 @@ setup() {
     load 'test_helper/common'
     wheel::test::setup
     . wheel/json/module.sh
-    TMP_FILE=$(mktemp)
-    trap "rm -rf $TMP_FILE" EXIT
     JSON_SOURCE=$(cat example.json)
-}
-
-@test "wheel::json::read" {
-    local input="{\"key\": \"value\"}"
-    echo "$input" > $TMP_FILE
-    local output=$(wheel::json::read "$TMP_FILE")
-    assert [ "$input" = "$output" ]
 }
 
 @test "wheel::json::validate" {

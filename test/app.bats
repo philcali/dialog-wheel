@@ -11,6 +11,8 @@ setup() {
     . wheel/stack/module.sh
     . wheel/screens/module.sh
     . wheel/app/module.sh
+    . wheel/utils/module.sh
+    . wheel/yaml/module.sh
 }
 
 @test "wheel::app::init" {
@@ -25,7 +27,7 @@ setup() {
     [ "$OUTPUT_PATH" = "output.json" ]
 }
 
-@test "wheel::app::run" {
+@test "wheel::app::run - json" {
     INPUT_SOURCE=$(mktemp)
     trap "rm -rf $INPUT_SOURCE" EXIT
     DIALOG_TIMEOUT=5
@@ -48,6 +50,27 @@ setup() {
         }
     }
 }
+EOF
+    assert wheel::app::run
+}
+
+@test "wheel::app::run - yaml" {
+    INPUT_SOURCE=$(mktemp)
+    YAML_PARSING="Y"
+    trap "rm -rf $INPUT_SOURCE" EXIT
+    DIALOG_TIMEOUT=5
+    cat << EOF > $INPUT_SOURCE
+version: "$VERSION"
+start: Start
+screens:
+    Start:
+        type: msgbox
+        properties:
+            text: "This is a message"
+        dialog:
+            timeout: 1
+        handlers:
+            timeout: wheel::handlers::ok
 EOF
     assert wheel::app::run
 }

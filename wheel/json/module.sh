@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+YAML_PARSING=""
+
 function wheel::json::get() {
     local map=$1
     local key=$2
@@ -81,12 +83,30 @@ function wheel::json::validate() {
     return 0
 }
 
+function wheel::json::yaml_transform() {
+    YAML_PARSING=${1:-"Y"}
+}
+
 function wheel::json::read() {
-    while read -r line
-    do
-        echo "$line"
-    done < "$1"
-    if [ -n "$line" ]; then
-        echo "$line"
+    local source=$1
+    local output; output=$(<"$source")
+    [[ "$source" = *".yaml" ]] || [ "$YAML_PARSING" = "Y" ] && [[ "$source" != *".json" ]] && output=$(echo "$output" | wheel::yaml::to_json)
+    local msg; msg=$(wheel::json::validate "$output")
+    if [ $? -eq 1 ]; then
+        echo "json error: $msg" > /dev/stderr
+        return 1
     fi
+    echo "$output"
+}
+
+function wheel::json::write() {
+    local content=$1
+    local dest_name=$2
+    {
+        if [[ "$dest_name" = *".yaml" ]] || [ "$YAML_PARSING" = "Y" ] && [[ "$dest_name" != *".json" ]]; then
+            echo "$content" | wheel::yaml::from_json
+        else
+            echo "$content"
+        fi
+    }
 }

@@ -1,0 +1,376 @@
+version: 1.0.0
+dialog:
+  aspect: 20
+  backtitle: Example App
+start: Welcome
+error: Error
+exit: Exit
+includes:
+- directory: examples
+  file: application.sh
+screens:
+  1 Checklist:
+    capture_into: list
+    dialog:
+      title: List Checklist
+    handlers:
+      capture_into: wheel::screens::checklist::list
+      ok: wheel::handlers::cancel
+    properties:
+      items:
+      - description: Phone doubling as a camera / computer
+        name: Phone
+      - description: Like reading a book or something
+        name: Tablet
+      - description: Computer in a lap
+        name: Laptop
+      - description: Work in a single place
+        name: Desktop
+      text: Which electronics do you own?
+    type: checklist
+  2 Checklist:
+    capture_into: electronics
+    dialog:
+      title: Field Checklist
+    handlers:
+      capture_into: wheel::screens::checklist::field
+      ok: wheel::handlers::cancel
+    properties:
+      items:
+      - configures: electronics.phone
+        description: Phone doubling as a camera / computer
+        name: Phone
+      - configures: electronics.tablet
+        description: Like reading a book or something
+        name: Tablet
+      - configures: electronics.laptop
+        description: Computer in a lap
+        name: Laptop
+      - configures: electronics.desktop
+        description: Work in a single place
+        name: Desktop
+      text: Which electronics do you own?
+    type: checklist
+  Another:
+    dialog:
+      title: Another Page
+    next: Main Menu
+    properties:
+      text: This is just another form box to demostrate things.
+    type: msgbox
+  Birthday:
+    capture_into: birthday
+    next: User Menu
+    properties:
+      text: Select your birth date
+    type: calendar
+  Boolean:
+    capture_into: some.flag
+    dialog:
+      colors: true
+    handlers:
+      cancel:
+      - wheel::handlers::flag
+      - wheel::handlers::cancel
+      capture_into: wheel::handlers::flag
+      ok: wheel::handlers::cancel
+    properties:
+      text: 'Set this value?
+
+        Current value: [\Zb$state.some.flag\ZB]'
+    type: yesno
+  Complex Form:
+    capture_into: address
+    dialog:
+      colors: true
+      title: Address Form
+    handlers:
+      capture_into: wheel::screens::form::save
+      ok: wheel::handlers::cancel
+    properties:
+      items:
+      - configures: street
+        length: 40
+        name: 'Street:'
+        required: true
+      - configures: city
+        length: 20
+        name: 'City:'
+      - configures: state
+        length: 15
+        name: 'State:'
+        required: true
+      - configures: zipcode
+        length: 10
+        name: 'Zip Code:'
+    type: form
+  Error:
+    dialog:
+      ok-label: Back
+    handlers:
+      ok: wheel::handlers::cancel
+    properties:
+      height: 7
+      text: 'An unexpected error has occurred.
+
+        Please reach out to support.'
+      width: 50
+    type: msgbox
+  Exit:
+    dialog:
+      clear: true
+    properties:
+      text: Are you sure you want to exit?
+    type: yesno
+  Form Menu:
+    back: Main Menu
+    clear_history: true
+    dialog:
+      cancel-label: Back
+    handlers:
+      ok: wheel::screens::hub::selection
+    properties:
+      items:
+      - description: A check list that returns a list
+        name: 1 Checklist
+      - depends: some.flag
+        description: A check list that flips fields
+        name: 2 Checklist
+      - description: A radiolist
+        name: Radiolist
+      - description: Select a value by range
+        name: Range
+      - description: Complex form for the entry
+        name: Complex Form
+      - description: Configure network devices
+        name: Networks
+      - description: Allows the ability to select a file
+        name: Select File
+      - configures: some.flag
+        description: Make a yes/no set a value
+        name: Boolean
+    type: hub
+  Invoke Custom:
+    entrypoint: application::example::hello_world
+    next: Main Menu
+    properties:
+      text: This is properties sent to custom function.
+    type: custom
+  Main Menu:
+    clear_history: true
+    dialog:
+      cancel-label: Exit
+      ok-label: Select
+      title: Main Menu
+    handlers:
+      ok: wheel::screens::hub::selection
+    properties:
+      items:
+      - description: Configure this user
+        name: User Menu
+      - description: Place to see all of the forms
+        name: Form Menu
+      - description: Validate things are working
+        name: Validate Menu
+      - description: Takes you to another page
+        name: Another
+      - description: Example of invoking a custom script
+        name: Invoke Custom
+      - description: Example of a custom screen missing properties
+        name: Missing Entry
+    type: hub
+  Missing Entry:
+    next: Main Menu
+    properties:
+      text: This is properties sent to custom function.
+    type: custom
+  Name:
+    capture_into: name
+    next: User Menu
+    properties:
+      text: Enter your name
+    type: input
+  Network Status:
+    dialog:
+      colors: true
+      title: Network Status
+    entrypoint: application::example::network_status
+    handlers:
+      ok: wheel::handlers::cancel
+    type: custom
+  Networks:
+    capture_into: network
+    dialog:
+      cancel-button: true
+      title: Select a Network
+    entrypoint: application::example::networks
+    next: Network Status
+    type: custom
+  Open File:
+    back: Read File
+    dialog:
+      cancel-label: Close
+      ok-label: Save
+    handlers:
+      ok: wheel::screens::editor::save
+    next: Read File
+    properties:
+      text: $state.file
+    type: editor
+  Password:
+    capture_into: password
+    dialog:
+      insecure: true
+    next: User Menu
+    properties:
+      text: Enter your password
+    type: password
+  Radiolist:
+    capture_into: desired
+    dialog:
+      colors: true
+      title: Radiolist
+    handlers:
+      ok: wheel::handlers::cancel
+    properties:
+      items:
+      - description: Phone doubling as a camera / computer
+        name: Phone
+      - description: Like reading a book or something
+        name: Tablet
+      - description: Computer in a lap
+        name: Laptop
+      - description: Work in a single place
+        name: Desktop
+      text: If you could only own \Zbone\ZB device type, which electronic would you
+        keep?
+    type: radiolist
+  Range:
+    capture_into: volume
+    dialog:
+      title: Speaker Volume
+    handlers:
+      ok: wheel::handlers::cancel
+    properties:
+      default: $state.volume
+      max: 100
+      min: 0
+      text: Set a new system volume
+      width: 70
+    type: range
+  Read File:
+    back: Select File
+    dialog:
+      extra-button: true
+      extra-label: Back
+      ok-label: Open
+    next: Open File
+    properties:
+      text: $state.file
+    type: textbox
+  Select File:
+    back: Form Menu
+    capture_into: file
+    dialog:
+      extra-button: true
+      extra-label: Reset
+    handlers:
+      extra: wheel::handlers::clear_capture
+      ok: wheel::screens::files::select
+    next: Read File
+    type: files
+  User Menu:
+    back: Main Menu
+    clear_history: true
+    dialog:
+      cancel-label: Back
+    handlers:
+      ok: wheel::screens::hub::selection
+    properties:
+      items:
+      - configures: name
+        name: Name
+        required: true
+      - configures: password
+        name: Password
+        required: true
+      - configures: birthday
+        name: Birthday
+    type: hub
+  Validate:
+    dialog:
+      title: Validating
+    next: Validation Result
+    properties:
+      actions:
+      - application::example::validate
+      text: Starting the validation process. Please be patient
+      width: 70
+    type: gauge
+  Validate Managed:
+    dialog:
+      title: Validating
+    managed: true
+    next: Validation Result
+    output_to: validation.log
+    properties:
+      actions:
+      - action: application::example::step
+        label: Testing the device storage...
+      - action: application::example::step
+        label: Testing the device compute...
+      - action: application::example::step_failure
+        label: Testing the device network...
+      - action: application::example::step
+        label: Testing authentication...
+      - action: application::example::step
+        label: Testing authorization...
+      width: 70
+    type: gauge
+  Validate Managed Simple:
+    dialog:
+      title: Validating
+    managed: true
+    next: Validation Result
+    properties:
+      actions:
+      - application::example::step_one
+      - application::example::step_two
+      - application::example::step_three
+      - application::example::step_four
+      - application::example::step_five
+      width: 70
+    type: gauge
+  Validate Menu:
+    back: Main Menu
+    clear_history: true
+    dialog:
+      cancel-label: Back
+    handlers:
+      ok: wheel::screens::hub::selection
+    properties:
+      items:
+      - description: Run an external gauge program
+        name: Validate
+      - description: Run a managed gauge program
+        name: Validate Managed
+      - description: Run a simple gauge program
+        name: Validate Managed Simple
+    type: hub
+  Validation Result:
+    dialog:
+      ok-label: Back
+    next: Validate Menu
+    properties:
+      text: Validation complete! Things look great!
+    type: msgbox
+  Welcome:
+    dialog:
+      ok-label: Continue
+      timeout: 3
+    handlers:
+      timeout: wheel::handlers::ok
+    next: Main Menu
+    properties:
+      text: This is some welcome text for the dialog box. Press Enter to begin.
+    type: msgbox
