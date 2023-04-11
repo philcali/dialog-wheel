@@ -9,32 +9,35 @@ START_SCREEN=""
 function wheel::app::usage() {
     local exit_code=${1:-0}
     echo "Usage $(basename "$0") - v$VERSION: Invoke a dialog wheel"
-    echo "Example usage: $(basename "$0") [-hv] [-d state.json] [-o output.json] [-l app.log] [-L $(echo "${LOG_LEVELS_TO_LABEL[*]}" | sed 's/ /|/g')] [-s START_SCREEN] [-i workflow.json] [< workflow.json]"
-    echo "  -o: Supply an output path for JSON state data"
-    echo "  -d: Supply a JSON file representative of existing state data"
-    echo "  -i: Supply a JSON file that represents the dialog state machine"
-    echo "  -s: Supply a screen name to start the state machine (defaults to none)"
-    echo "  -l: Supply a log source (defaults to /dev/null)"
-    echo "  -L: Supply a log level (defaults to INFO)"
-    echo "  -v: Prints out the version and exits"
-    echo "  -h: Prints out this help"
+    echo "Example usage: $(basename "$0") [-h] [-v] [-d state.json] [-o output.json] [-l app.log] [-L $(echo "${LOG_LEVELS_TO_LABEL[*]}" | sed 's/ /|/g')] [-s START_SCREEN] [-i workflow.json] [< workflow.json]"
+    echo "  -o, --state-output: Supply an output path for JSON state data (defaults to fd 3)"
+    echo "  -d, --state-input:  Supply a JSON file representative of existing state data (defaults to none)"
+    echo "  -i, --input:        Supply a JSON file that represents the dialog state machine (defaults to /dev/stdin)"
+    echo "  -s, --start:        Supply a screen name to start the state machine (defaults to none)"
+    echo "  -l, --log-file:     Supply a log source (defaults to /dev/null)"
+    echo "  -L, --log-level:    Supply a log level (defaults to INFO)"
+    echo "  -y, --yaml:         Hint to read stdin and write state data as yaml"
+    echo "  -v, --version:      Prints out the version and exits"
+    echo "  -h, --help:         Prints out this help"
     exit "$exit_code"
 }
 
 function wheel::app::init() {
-    while getopts "s:o:d:L:l:i:hv" flag
-    do
+    while [ -n "$*" ]; do
+        local flag=$1
         case "${flag}" in
-        s) START_SCREEN="${OPTARG}";;
-        i) INPUT_SOURCE="${OPTARG}";;
-        o) wheel::state::set_output "${OPTARG}";;
-        d) wheel::state::init "${OPTARG}";;
-        l) wheel::log::set_file "${OPTARG}";;
-        L) wheel::log::set_level "${OPTARG}";;
-        h) wheel::app::usage 0;;
-        v) echo "$VERSION" && exit 0;;
+        -s|--start) START_SCREEN="$2" && shift;;
+        -i|--input) INPUT_SOURCE="$2" && shift;;
+        -o|--state-output) wheel::state::set_output "$2" && shift;;
+        -d|--state-input) wheel::state::init "$2" && shift;;
+        -l|--log-file) wheel::log::set_file "$2" && shift;;
+        -L|--log-level) wheel::log::set_level "$2" && shift;;
+        -y|--yaml) wheel::json::yaml_transform "Y";;
+        -h|--help) wheel::app::usage 0;;
+        -v|--version) echo "$VERSION" && exit 0;;
         *) wheel::app::usage 1;;
         esac
+        shift
     done
 }
 
@@ -147,12 +150,8 @@ function wheel::app::_run() {
 
 function wheel::app::run() {
     local input_source="${INPUT_SOURCE:-/dev/stdin}"
-    local json_source; json_source=$(wheel::json::read "$input_source")
-    local msg; msg=$(wheel::json::validate "$json_source")
-    if [ $? -eq 1 ]; then
-        echo "json error: $msg" > /dev/stderr
-        exit 1
-    fi
+    local json_source
+    json_source=$(wheel::json::read "$input_source") || exit 1
     wheel::events::set_traps
     local answer_file; answer_file=$(mktemp)
     wheel::events::add_clean_up "rm $answer_file"

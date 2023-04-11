@@ -7,10 +7,12 @@ setup() {
     . wheel/state/module.sh
     . wheel/events/module.sh
     . wheel/log/module.sh
+    . wheel/utils/module.sh
+    . wheel/json/module.sh
+    . wheel/yaml/module.sh
 }
 
 @test "wheel::state::init" {
-    . wheel/json/module.sh
     TMP_FILE=$(mktemp)
     trap "rm -rf $TMP_FILE" EXIT
     echo '{"field": "value", "name": "My Name"}' > $TMP_FILE
@@ -20,7 +22,7 @@ setup() {
 }
 
 @test "wheel::state::set_output" {
-    assert [ "$OUTPUT_PATH" = "state.json" ]
+    assert [ "$OUTPUT_PATH" = "" ]
     wheel::state::set_output "new-state.json"
     assert [ "$OUTPUT_PATH" = "new-state.json" ]
 }

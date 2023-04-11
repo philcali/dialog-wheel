@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 
 APP_STATE="{}"
-OUTPUT_PATH="state.json"
+OUTPUT_PATH=""
 
 function wheel::state::init() {
     local source=$1
-    local state_source; state_source=$(wheel::json::read "$source")
-    local msg; msg=$(wheel::json::validate "$state_source")
-    if [ $? -eq 1 ]; then
-        echo "json error: $msg" > /dev/stderr
-        exit 1
-    fi
-    APP_STATE=$state_source
+    APP_STATE=$(wheel::json::read "$source") || return 1
 }
 
 function wheel::state::set_output() {
@@ -19,7 +13,15 @@ function wheel::state::set_output() {
 }
 
 function wheel::state::flush() {
-    echo "$APP_STATE" > $OUTPUT_PATH
+    [ "$APP_STATE" != "{}" ] && {
+        local path=$OUTPUT_PATH
+        if [ -n "$OUTPUT_PATH" ]; then
+            wheel::json::write "$APP_STATE" "$OUTPUT_PATH" > "$path"
+        # Allow an fd 3 > redirect, since stdout is taken with the dialog
+        elif { true >&3; } 2> /dev/null; then
+            wheel::json::write "$APP_STATE" "$OUTPUT_PATH" >&3
+        fi
+    }
 }
 
 function wheel::state::get() {
