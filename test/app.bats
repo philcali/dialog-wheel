@@ -13,6 +13,7 @@ setup() {
     . wheel/app/module.sh
     . wheel/utils/module.sh
     . wheel/yaml/module.sh
+    . wheel/functions/module.sh
 }
 
 @test "wheel::app::init" {

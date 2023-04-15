@@ -525,6 +525,9 @@
             "next": "Main Menu"
         },
         "Another": {
+            "condition": {
+                "!not": [ "$state.some.flag" ]
+            },
             "type": "msgbox",
             "dialog": {
                 "title": "Another Page"

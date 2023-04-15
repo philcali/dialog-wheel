@@ -52,6 +52,9 @@ screens:
       text: Which electronics do you own?
     type: checklist
   Another:
+    condition:
+      "!not":
+      - $state.some.flag
     dialog:
       title: Another Page
     next: Main Menu
