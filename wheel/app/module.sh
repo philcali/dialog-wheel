@@ -84,22 +84,24 @@ function wheel::app::_run() {
         back_screen=$(wheel::json::get_or_default "$screen" "back" "")
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
-        # Allow trap
-        wheel::screens::new_screen "$screen" "$answer_file" &
-        ACTIVE_DIALOG=$!
-        wait $ACTIVE_DIALOG
-        returncode=$?
-        ACTIVE_DIALOG=""
-        # dialog does something weird here... if the answer is a spaced arg
-        # Then it will quote it "sometimes"... here we account for that
-        # Unfortunately this parsing hint needs to be passed to the
-        # capture handlers
-        if grep '"' < "$answer_file" 2>&1 >/dev/null; then
-            IFS=$'\n' value=("$(xargs -n1 < "$answer_file")")
-            single_arg=0
-        else
-            value=("$(<"$answer_file")")
-        fi
+        wheel::functions::expand "$(wheel::json::get_or_default "$screen" "condition" "")" && {
+            # Allow trap
+            wheel::screens::new_screen "$screen" "$answer_file" &
+            ACTIVE_DIALOG=$!
+            wait $ACTIVE_DIALOG
+            returncode=$?
+            ACTIVE_DIALOG=""
+            # dialog does something weird here... if the answer is a spaced arg
+            # Then it will quote it "sometimes"... here we account for that
+            # Unfortunately this parsing hint needs to be passed to the
+            # capture handlers
+            if grep '"' < "$answer_file" 2>&1 >/dev/null; then
+                IFS=$'\n' value=("$(xargs -n1 < "$answer_file")")
+                single_arg=0
+            else
+                value=("$(<"$answer_file")")
+            fi
+        }
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, single arg: $single_arg value ${value[*]}"
         case $returncode in
         "$DIALOG_OK")

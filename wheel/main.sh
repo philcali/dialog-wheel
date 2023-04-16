@@ -11,6 +11,8 @@ DIR=$(dirname "$(realpath "$0")")
 . "$DIR"/state/module.sh
 . "$DIR"/utils/module.sh
 . "$DIR"/dialog/module.sh
+. "$DIR"/yaml/module.sh
+. "$DIR"/functions/module.sh
 . "$DIR"/app/module.sh
 
 wheel::app::init "$@"
