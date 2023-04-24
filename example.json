@@ -526,7 +526,11 @@
         },
         "Another": {
             "condition": {
-                "!not": [ "$state.some.flag" ]
+                "!not": [
+                    {
+                        "!ref": "some.flag"
+                    }
+                ]
             },
             "type": "msgbox",
             "dialog": {
