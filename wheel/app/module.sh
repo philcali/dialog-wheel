@@ -80,11 +80,13 @@ function wheel::app::_run() {
         local back_screen
         # shellcheck disable=SC2034 # next_screen left for documentation
         next_screen=$(wheel::json::get_or_default "$screen" "next" "")
+        next_screen=$(wheel::functions::expand "$next_screen")
         # shellcheck disable=SC2034 # back_screen left for documentation
         back_screen=$(wheel::json::get_or_default "$screen" "back" "")
+        back_screen=$(wheel::functions::expand "$back_screen")
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
-        wheel::functions::expand "$(wheel::json::get_or_default "$screen" "condition" "")" && {
+        wheel::functions::expand "$(wheel::json::get_or_default "$screen" "condition" "")" >/dev/null && {
             # Allow trap
             wheel::screens::new_screen "$screen" "$answer_file" &
             ACTIVE_DIALOG=$!

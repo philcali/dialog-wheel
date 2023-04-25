@@ -52,12 +52,13 @@ screens:
       text: Which electronics do you own?
     type: checklist
   Another:
-    condition:
-      "!not":
-      - $state.some.flag
     dialog:
       title: Another Page
-    next: Main Menu
+    next:
+      "!if":
+      - "!ref": "some.flag"
+      - "Main Menu"
+      - "Boolean"
     properties:
       text: This is just another form box to demostrate things.
     type: msgbox

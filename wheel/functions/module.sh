@@ -2,7 +2,8 @@
 
 function wheel::functions::expand() {
     local condition=$1
-    [ -z "$condition" ] && return 0
+    local exit_code=${2:-0}
+    [ -z "$condition" ] && return "$exit_code"
     local json_type
     local func
     local args
@@ -11,18 +12,62 @@ function wheel::functions::expand() {
     null) return 0;;
     number) [ "$condition" -ne "0" ] && return 0;;
     boolean) [ "$condition" = "true" ] && return 0;;
-    string) [ "$(wheel::state::interpolate "$condition")" = "true" ] && return 0;;
+    string) [ -n "$condition" ] && echo "$condition" && return 0;;
+    array) wheel::json::get "$condition" "[]" -c && return $?;;
     object)
-        wheel::log::info "$(wheel::json::get "$condition" " | to_entries | .[]" -c)"
+        old_ifs=$IFS
+        IFS=$'\n'
         for entry in $(wheel::json::get "$condition" " | to_entries | .[]" -c); do
             func=$(wheel::json::get "$entry" "key")
             [[ "$func" = "!"* ]] && func="wheel::functions::${func/!/}"
             args=$(wheel::json::get "$entry" "value")
-            wheel::log::info "key is $func and value is $args"
             "$func" "$args" && return 0
-        done;;
+        done
+        IFS=$old_ifs;;
     esac
     return 1
+}
+
+function wheel::functions::if() {
+    local args
+    mapfile -t args <<< "$(wheel::json::get "$1" "[]" -c)"
+    if wheel::functions::expand "${args[0]}" 1; then
+        wheel::functions::expand "${args[1]}"
+    else
+        wheel::functions::expand "${args[2]}"
+    fi
+}
+
+function wheel::functions::join() {
+    local rval=""
+    local delim
+    local input
+    local arg
+    delim="$(wheel::json::get "$1" "[0]")"
+    input=$(wheel::json::get "$1" "[1]")
+    for arg in $(wheel::functions::expand "$input"); do
+        [ -n "$rval" ] && rval+="$delim"
+        rval+="$arg"
+    done
+    wheel::functions::expand "$rval" 1
+}
+
+function wheel::functions::split() {
+    local delim
+    local elements
+    local input
+    input=$(wheel::json::get "$1" "[1]")
+    input=$(wheel::functions::expand "$input")
+    delim="$(wheel::json::get "$1" "[0]")"
+    while IFS=$delim read -ra elements; do
+        echo "${elements[*]}"
+    done <<< "$input"
+}
+
+function wheel::functions::ref() {
+    local arg
+    arg=$(wheel::state::get "$1")
+    wheel::functions::expand "$arg" 1
 }
 
 function wheel::functions::not() {
