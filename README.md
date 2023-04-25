@@ -9,6 +9,8 @@ for dialog single page displays.
 
 ![Example Gif](images/example.gif)
 
+See the [workflow documentation](WORKFLOW.md) for more workflow schema.
+
 ## What does wheel handle?
 
 - State Management
@@ -40,6 +42,49 @@ reference a function or a command to replace all calls normally directed to
 program interface. Perhaps in a future release, the calls will use its own
 abstraction, but for now that's an exercise for the reader.
 
+## Conditional Render and Branching Logic
+
+The `dialog-wheel` program will parse special functions to render different
+paths on `next` or `back`.
+
+- `!ref`: pulls data our of the managed application state
+``` yaml
+MyScreen:
+  capture_into: state.boolean
+  type: yesno
+  properties:
+    text: Do you like bananas?
+  handlers:
+    ok: wheel::handlers::cancel
+    cancel:
+    - wheel::handlers::flag
+    - wheel::handlers::cancel
+    capture_into: wheel::handlers::flag
+Confirmed:
+  type: msgbox
+  condition:
+    "!ref": state.boolean
+  properties:
+    text: You did it. Go to the next page
+  next: Another
+Another:
+  type: msgbox
+  properties:
+    text: Just another page
+```
+- `!if`: applies a truth and false path
+``` yaml
+MyScreen:
+  type: msgbox
+  properties:
+    text: Enter next if you want to continue.
+  next:
+    "!if":
+    - "!ref": state.boolean
+    - TruthPage
+    - FalsePage
+```
+
 ## How do I install it?
 
 The example includes a `Dockerfile` for testing the application. If you want
@@ -69,7 +114,7 @@ rm $(which dialog-wheel)
 Build the container:
 
 ```
-docker built -t dialog-wheel .
+docker build -t dialog-wheel .
 ```
 
 Run it like below:
@@ -80,13 +125,16 @@ docker run -it --rm --name dialog-wheel dialog-wheel -h
 The `help` should print below
 ```
 Usage main.sh - v1.0.0: Invoke a dialog wheel
-Example usage: main.sh [-h] [-d state.json] [-o output.json] [-l app.log] [-L DEBUG|INFO|WARN|ERROR] [-s workflow.json] [< workflow.json]
-  -o: Supply an output path for configured JSON
-  -d: Supply a JSON file representative of the workflow state data
-  -s: Supply a JSON file that represents the dialog flow
-  -l: Supply a log source (defaults to /dev/null)
-  -L: Supply a log level (defaults to INFO)
-  -h: Prints out this help
+Example usage: main.sh [-h] [-v] [-d state.json] [-o output.json] [-l app.log] [-L TRACE|DEBUG|INFO|WARN|ERROR|FATAL] [-s START_SCREEN] [-i workflow.json] [< workflow.json]
+  -o, --state-output: Supply an output path for JSON state data (defaults to fd 3)
+  -d, --state-input:  Supply a JSON file representative of existing state data (defaults to none)
+  -i, --input:        Supply a JSON file that represents the dialog state machine (defaults to /dev/stdin)
+  -s, --start:        Supply a screen name to start the state machine (defaults to none)
+  -l, --log-file:     Supply a log source (defaults to /dev/null)
+  -L, --log-level:    Supply a log level (defaults to INFO)
+  -y, --yaml:         Hint to read stdin and write state data as yaml
+  -v, --version:      Prints out the version and exits
+  -h, --help:         Prints out this help
 ```
 
 To run the example application for `example.json`, simply mount the `$PWD` into `/wheel` like so:
