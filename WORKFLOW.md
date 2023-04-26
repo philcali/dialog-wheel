@@ -6,10 +6,10 @@ UX flow from the control layer of the UI.
 
 ### The Workflow
 
-- `version`: (required) "1.0.0"
-- `dialog`: (optional) subdocument to define common dialog parameters
+- `version`: (required) `"1.0.0"`
 - `screens`: (required) subdocument of `screen` objects
-- `start`: (required) string of the starting `screen`
+- `dialog`: (optional) subdocument to define common dialog parameters
+- `start`: (optional) string of the starting `screen`
 - `exit`: (optional) string of the "exit capture" `screen`
 - `error`: (optional) string of the "uncaught error" `screen`
 - `handlers`: (optional) string or array of strings handlers
@@ -52,11 +52,11 @@ start: Message
 An inclusion defines the relative or absolute path to a script that defines
 a function or set of functions to be used in the workflow definition. An
 inclusion can consist of `handler` functions, arbitrary scripts invoked in
-`custom` screens, `event` handlers, and everything in between. The inclusion
+`custom` screens, `event` handlers, and everything in between. The inclusions
 are basically user-defined functions that are invoked by `dialog-wheel`.
 
-- `directory`: (optional) relative pr absolute path of script folders
 - `file`: (required) relative or absolute path of scripts who control the app
+- `directory`: (optional) relative pr absolute path of script folders
 
 __JSON__
 ``` json
@@ -81,8 +81,8 @@ The screen object contains the static definition for rendering a single page
 node in an otherwise expansive decision tree. 
 
 - `type`: (required) Various screen types
-- `capture_into`: (optional) JSON path string to set the internal state
 - `properties`: (required) subdocument of properties in for screen types
+- `capture_into`: (optional) JSON path string to set the internal state
 - `dialog`: (optional) subdocument of dialog properties
 - `next`: (optional) string or conditional
 - `back`: (optional) string or conditional
@@ -235,8 +235,8 @@ Confirmation:
 
 #### Input
 
-The `inputbox` is just a plain text input element. The key properties
-for an `inputbox` is:
+The `input` is just a plain text input element. The key properties
+for an `input` is:
 
 - `capture_into`: (optional) state field to store the value
 - `text`: (optional) string label for the input box
@@ -268,6 +268,144 @@ __State__
 ``` yaml
 user:
     name: philcali
+```
+
+#### Checklist
+
+The `checklist` type allows a user to select one or more items in a list
+of items. The key properties of the `checklist` are:
+
+- `items`: (required) array of item documents
+- `text`: (optional) string that labels the list
+- `capture_into`: (optional) the state field to store selections
+
+Note: to get the most out of the `checklist`, use one of the two provided
+handlers in `handlers.capture_into` to store into the state:
+
+- `wheel::screens::checklist::list`: stores the selected values as an array
+- `wheel::screens::checklist::field`: stores the selected values as an object with the fields in the object as booleans
+
+__JSON__
+
+``` json
+"Checklist": {
+    "type": "checklist",
+    "capture_into": "favorite.fruit",
+    "properties": {
+        "text": "Select your favorite",
+        "items": [
+            {
+                "name": "Apples",
+                "description": "Once day keeps the doc at bay"
+            },
+            {
+                "name": "Bananas",
+                "description": "High potassium, delicious"
+            },
+            {
+                "name": "Plum",
+                "description": "Sweet, watery, delicious"
+            }
+        ]
+    }
+}
+```
+
+__YAML__
+``` yaml
+Checklist:
+    type: checklist
+    capture_into: favorite.fruit
+    properties:
+        text: Select your favorite
+        items:
+        - name: Apples
+          description: Once a day keeps the doc at bay
+        - name: Bananas
+          description: High potassium, delicious
+        - name: Plum
+          description: Sweet, watery, delicious
+```
+
+![Checklist](images/documentation/checklist.png)
+
+__State: List__
+
+``` yaml
+favorite:
+    fruit:
+    - Apples
+    - Plum
+```
+
+__State: Field__
+``` yaml
+favorite:
+    fruit:
+        Apples: True
+        Bananas: False
+        Plum: True
+```
+
+#### Radiolist
+
+The `radiolist` type will allow the user to select one item in a list
+of items. The UI is different from the `hub` in that selection is
+additional to just pressing "OK". The key properties are:
+
+- `items`: (required) array of item documents
+- `text`: (optional) string labeling the radio list
+- `capture_into`: (optional) state field to update with selected value
+
+__JSON__
+``` json
+"Radiolist": {
+    "type": "radiolist",
+    "capture_into": "favorite.fruit",
+    "properties": {
+        "text": "Select your favorite",
+        "items": [
+            {
+                "name": "Apples",
+                "description": "Once day keeps the doc at bay"
+            },
+            {
+                "name": "Bananas",
+                "description": "High potassium, delicious"
+            },
+            {
+                "name": "Plum",
+                "description": "Sweet, watery, delicious"
+            }
+        ]
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+RAdiolist:
+    type: radiolist
+    capture_into: favorite.fruit
+    properties:
+        text: Select your favorite
+        items:
+        - name: Apples
+          description: Once a day keeps the doc at bay
+        - name: Bananas
+          description: High potassium, delicious
+        - name: Plum
+          description: Sweet, watery, delicious
+```
+
+![Radiolist](images/documentation/radiolist.png)
+
+__State__
+
+``` yaml
+favorite:
+    fruit: Apples
 ```
 
 ### Handlers
