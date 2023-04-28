@@ -302,6 +302,7 @@ screens:
         name: Birthday
     type: hub
   Validate:
+    managed: false
     dialog:
       title: Validating
     next: Validation Result

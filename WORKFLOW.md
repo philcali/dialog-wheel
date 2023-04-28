@@ -89,6 +89,12 @@ node in an otherwise expansive decision tree.
 - `handlers`: (optional) string or array of string handlers
 - `clear_history`: (optional) flag that signals the workflow engine to clear the stack tracking visited nodes.
 
+Common properties shared between *most* screen types are:
+
+- `text`: (optional) string label of the screen
+- `width`: (optional) integer fixed width of the screen
+- `height`: (optional) integer fixed height of the screen
+
 __JSON__
 ``` json
 "Message Box": {
@@ -385,7 +391,7 @@ __JSON__
 __YAML__
 
 ``` yaml
-RAdiolist:
+Radiolist:
     type: radiolist
     capture_into: favorite.fruit
     properties:
@@ -407,6 +413,235 @@ __State__
 favorite:
     fruit: Apples
 ```
+
+#### Form
+
+The `form` type allows a user to input multiple fields. You can mix plain text
+entry with password types. The key properties of a `form` are:
+
+- `items`: (required) array of `item` documents
+- `text`: (optional) label of the form
+- `capture_into`: (optional) state field to hydrate
+
+Getting the most out of a `form` means setting the `handlers.capture_into` to
+`wheel::screens::form::save`.
+
+__JSON__
+
+``` json
+"Form": {
+    "type": "form",
+    "capture_into": "address",
+    "properties": {
+        "text": "Enter your mailing address",
+        "items": [
+            {
+                "name": "Street",
+                "configures": "street",
+                "length": 40
+            },
+            {
+                "name": "City",
+                "configures": "city",
+                "length": 20
+            },
+            {
+                "name": "State",
+                "configures": "state",
+                "length": 15
+            },
+            {
+                "name": "Zip Code",
+                "configures": "zipcode"
+            }
+        ]
+    },
+    "handlers": {
+        "capture_into": "wheel::screens::form::save"
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Form:
+  type: form
+  capture_into: address
+  properties:
+    text: Enter your mailing address
+    items:
+    - name: Street
+      configures: street
+      length: 40
+    - name: City
+      configures: city
+      length: 20
+    - name: State
+      configures: state
+      length: 15
+    - name: Zip Code
+      configures: zipcode
+  handlers:
+    capture_into: wheel::screens::form::save
+```
+
+![Form](images/documentation/form.png)
+
+__State__
+
+``` yaml
+address:
+    street: 5555 Fort Benedict
+    city: Scrambled Eggs
+    state: Nothing
+    zipcode: 11111
+```
+
+#### Gauge
+
+The `gauge` is the the "progress bar" of the TUI to indicate that work is
+being done. While the screen can be used for any loading action, typically
+the `gauge` is used to indicate that actions are being performed. There are
+two forms of `gauge`. A managed gauge (default), and unmanaged gauge.
+
+- `actions`: array of `action` objects
+- `text`: string of the initial text
+
+__Managed__
+
+![Managed Gauge](images/documentation/managed_gauge.png)
+
+__Unmanaged__
+
+![Unmanaged Gauge](images/documentation/unmanaged_gauge.png)
+
+
+The definition for both are included. Note that actions references are
+recommended to be function names brought in by inclusions. The definitions
+below are simply used for demonstration purposes.
+
+__JSON__
+
+``` json
+"Gauge": {
+    "type": "gauge",
+    "next": "Unmanaged Gauge",
+    "properties": {
+        "text": "Loading",
+        "width": 70,
+        "actions": [
+            {
+                "label": "First Step",
+                "action": "sleep 1"
+            },
+            {
+                "label": "Second Step",
+                "action": "sleep 1"
+            },
+            {
+                "label": "Third Step",
+                "action": "sleep 1"
+            },
+            {
+                "label": "Fourth Step",
+                "action": "sleep 1"
+            },
+            {
+                "label": "Fifth Step",
+                "action": "sleep 1"
+            }
+        ]
+    }
+},
+"Unmanaged Gauge": {
+    "type": "gauge",
+    "properties": {
+        "text": "Loading",
+        "width": 70,
+        "actions": [
+            "echo XXX",
+            "echo 20",
+            "echo Step One",
+            "echo XXX",
+            "sleep 1",
+            "echo XXX",
+            "echo 40",
+            "echo Step Two",
+            "echo XXX",
+            "sleep 1",
+            "echo XXX",
+            "echo 60",
+            "echo Step Three",
+            "echo XXX",
+            "sleep 1",
+            "echo XXX",
+            "echo 80",
+            "echo Step Four",
+            "echo XXX",
+            "sleep 1",
+            "echo XXX",
+            "echo 80",
+            "echo Step Five",
+            "echo XXX"
+        ]
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Gauge:
+  type: gauge
+  next: Unmanaged Gauge
+  properties:
+    text: Loading
+    width: 70
+    actions:
+    - label: "First Step"
+      action: sleep 1
+    - label: "Second Step"
+      action: sleep 1
+    - label: "Third Step"
+      action: sleep 1
+    - label: "Fourth Step"
+      action: sleep 1
+    - label: "Fifth Step"
+      action: sleep 1
+Unmanaged Gauge:
+  type: gauge
+  managed: false
+  properties:
+    text: Loading
+    width: 70
+    actions:
+    - echo XXX
+    - echo 20
+    - echo Step One
+    - echo XXX
+    - sleep 1
+    - echo XXX
+    - echo 40
+    - echo Step Twp
+    - echo XXX
+    - sleep 1
+    - echo XXX
+    - echo 60
+    - echo Step Three
+    - echo XXX
+    - sleep 1
+    - echo XXX
+    - echo 80
+    - echo Step Four
+    - echo XXX
+    - sleep 1
+    - echo XXX
+    - echo 100
+    - echo Step Five
+    - echo XXX
+```
+
 
 ### Handlers
 
