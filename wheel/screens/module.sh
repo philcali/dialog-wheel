@@ -302,10 +302,10 @@ function wheel::screens::range() {
 }
 
 function wheel::screens::_invoke_gauge_action() {
-    local log_prefix="[$CURRENT_SCREEN][$i][$action]"
+    local log_prefix="[$CURRENT_SCREEN][$i][${action[*]}]"
     (
         {
-            "$action" 2>&1 1>&3 3>&- |
+            "${action[@]}" 2>&1 1>&3 3>&- |
             wheel::log::stream wheel::log::error "$log_prefix"
             exit "${PIPESTATUS[0]}"
         } 3>&1 1>&2 |
@@ -363,7 +363,7 @@ function wheel::screens::gauge() {
     local actions=()
     mapfile -t actions < <(wheel::json::get "$screen" 'properties.actions[]?' -c)
     wheel::log::debug "Found the actions ${actions[*]}"
-    if [ "$(wheel::json::get_or_default "$screen" "managed" "false")" = "true" ]; then
+    if [ "$(wheel::json::get_or_default "$screen" "managed" "true")" = "true" ]; then
         local output_file; output_file=$(wheel::json::get_or_default "$screen" "output_to" "")
         # Support overriding logger for local actions
         local LOG_FILE=${output_file:-$LOG_FILE}
@@ -375,6 +375,7 @@ function wheel::screens::gauge() {
                 if wheel::json::validate "$action" 2>/dev/null; then
                     label=$(wheel::json::get_or_default "$action" "label" "$label")
                     action=$(wheel::json::get "$action" "action")
+                    read -r -a action <<< "$action"
                 fi
                 local frac; frac=$(echo "scale=2; ($i + 1)/$total" | bc)
                 local percentage; percentage=$(awk -vf="$frac" 'BEGIN{printf "%.0f", f * 100}')
@@ -395,10 +396,11 @@ function wheel::screens::gauge() {
     else
         (
             for i in "${!actions[@]}"; do
-                local action="${actions[$i]}"
-                local log_prefix="[$CURRENT_SCREEN][$i][$action]"
+                local single_action="${actions[$i]}"
+                read -r -a single_action <<< "$single_action"
+                local log_prefix="[$CURRENT_SCREEN][$i][${single_action[*]}]"
                 wheel::log::info "$log_prefix Starting invocation"
-                "$action" || exit "$DIALOG_ERROR"
+                "${single_action[@]}" || exit "$DIALOG_ERROR"
             done
         ) |
         "${DIALOG[@]}" \
