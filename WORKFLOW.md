@@ -414,6 +414,206 @@ favorite:
     fruit: Apples
 ```
 
+#### Range
+
+The `range` type allows a user to input a numerical range. The key properties
+of a `range` are:
+
+- `text`: (optional) string label of the range
+- `capture_into`: (optional) string of the state field
+- `min`: (optional) integer of the minimum value
+- `max`: (optional) integer of the maximum value
+- `default`: (optional) integer of the default value in the absence of state
+
+__JSON__
+
+``` json
+"Range": {
+    "type": "range",
+    "capture_into": "range",
+    "properties": {
+        "text": "Select a value between 0 and 10",
+        "min": 0,
+        "max": 10,
+        "width": 70
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Range:
+  type: range
+  capture_into: range
+  properties:
+    text: Select a value between 0 and 10
+    min: 0
+    max: 10
+    width: 70
+```
+
+![Range](images/documentation/range.png)
+
+
+__State__
+
+``` yaml
+range: 4
+```
+
+#### Calendar
+
+The `calendar` type allows a user to input a date. The key properties of a
+`calendar` are:
+
+- `text`: (optional) string label of the calendar
+- `capture_into`: (optional) string of the state field
+
+__JSON__
+
+``` json
+"Calendar": {
+    "type": "calendar",
+    "capture_into": "user.birthdate",
+    "properties": {
+        "text": "Enter birthdate"
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Calendar:
+    type: calendar
+    caprture_into: user.birthdate
+    properties:
+        text: Enter birthdate
+```
+
+![Calenar](images/documentation/calendar.png)
+
+__State__
+
+``` yaml
+user:
+    birthdate: 29/04/2023
+```
+
+#### Files
+
+The `files` type allows a user to select a specific file. The key properties
+of a `files` type are:
+
+- `capture_into`: (optional) string state field
+- `text`: (optional) string value for selected field
+
+__JSON__
+
+``` json
+"Files": {
+    "type": "files",
+    "capture_into": "selected.file",
+    "properties": {
+        "text": "$state.selected.file"
+    },
+    "handlers": {
+        "ok": "wheel::screens::files::select"
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Files:
+    type: files
+    capture_into: selected.file
+    properties:
+        text: "$state.selected.file"
+    handlers:
+        ok: wheel::screens::files::select
+```
+
+![Files](images/documentation/files.png)
+
+__State__
+
+``` yaml
+selected:
+    file: Dockerfile
+```
+
+#### Textbox
+
+The `textbox` type allows a user to read a file, either selected from the
+`files` type or other source. The key properties of a `textbox` are:
+
+- `text`: (optional) string of the file to open
+- `capture_into`: (optional) string of the state field
+
+__JSON__
+
+``` json
+"Open File": {
+    "type": "textbox",
+    "properties": {
+        "text": "$state.selected.file"
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Open File:
+    type: textbox
+    properties:
+        text: "$state.selected.file"
+```
+
+![Textbox](images/documentation/textbox.png)
+
+#### Editbox
+
+The `editor` type allows a user to edit a file, either selected from the
+`files` type or other source. The key properties of a `editor` are:
+
+- `text`: (optional) string of the file to edit
+- `capture_into`: (optional) string of the state field
+
+Note: to get the most out of an `editor` type, override the `handlers.ok`
+event with the built-in `wheel::screens::editor::save`, which will update
+the edited file with new values.
+
+__JSON__
+
+``` json
+"Edit File": {
+    "type": "editor",
+    "properties": {
+        "text": "$state.selected.file"
+    },
+    "handlers": {
+        "ok": "wheel::screens::editor::save"
+    }
+}
+```
+
+__YAML__
+
+``` yaml
+Edit File:
+    type: editor
+    properties:
+        text: "$state.selected.file"
+    handlers:
+        ok: wheel::screens::editor::save
+```
+
+![Editor](images/documentation/editor.png)
+
 #### Form
 
 The `form` type allows a user to input multiple fields. You can mix plain text
