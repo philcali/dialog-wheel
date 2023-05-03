@@ -136,7 +136,7 @@ function wheel::screens::_parse_menu_options() {
     local index
     local old_ifs=$IFS
     IFS=$'\n'
-    mapfile -t action_items < <(wheel::json::get "$screen" "properties.items[]?" -c)
+    mapfile -t action_items < <(wheel::functions::expand "$(wheel::json::get "$screen" "properties.items")")
     for index in "${!action_items[@]}"; do
         local item="${action_items[$index]}"
         local item_caps; item_caps=$(wheel::json::get_or_default "$item" "configures" "")
