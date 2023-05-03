@@ -869,3 +869,239 @@ Default handlers are provided by the `dialog-wheel` program already in scope:
 - `wheel::screens::checklist::field`: will set the checklist type values as fields of boolean flags
 
 You can define your own custom handlers as functions in included scripts.
+
+### Recipes
+
+This section is intended to provide reusable configuration snippets in the
+absence of supported "layer two" functionality.
+
+#### List Management
+
+Thie "copy / paste" recipe can be used to workflow the ability to:
+
+1. manage items in a list
+    1. Create
+    2. Update
+    3. Delete
+1. Scaffold a controller for list manaagement
+
+The recipe is a "minimal" code solution, and can easily be adapted to fit
+into other workflows. For example: the conditional render is used
+for demonstration purposes anc can be eliminated.
+
+As is, the recipe demonstrates the controller binding for screen handlers
+and state management. It combines the following:
+
+- Composite event handlers on screens
+- Conditional rendering and branching decisions
+- Creation of immutable properties and editing
+- Direct flow control in the event
+
+__recipes.sh__
+
+```bash
+function wheel::recipes::add_to_list() {
+    local index
+    index=$(wheel::state::get "selected_index")
+    [ -z "$index" ] && index=$(wheel::state::get "list.items | length")
+    wheel::state::set "list.items[$index]" "$(wheel::state::get "current_item")" argjson
+}
+
+function wheel::recipes::remove_from_list() {
+    local current_item
+    local result
+    current_item=$(wheel::state::get "current_item.name")
+    result=$(wheel::state::get " | [.list.items[] | select(.name != \"$current_item\")]")
+    wheel::state::set "list.items" "$result" argjson
+}
+
+function wheel::recipes::reset() {
+    wheel::state::del "selected_index"
+    wheel::state::del "selected_item"
+    wheel::state::del "current_item"
+}
+
+function wheel::recipes::select_item() {
+    local index=0
+    local selected_item
+    selected_item=$(wheel::state::get "selected_item")
+    local old_ifs=$IFS
+    IFS=$'\n'
+    for entry in $(wheel::state::get "list.items[]?" -c); do
+        local name=$(wheel::json::get "$entry" "name")
+        if [ "$name" = "$selected_item" ]; then
+            wheel::state::set "current_item" "$entry" argjson
+            wheel::state::set "selected_index" "$index" argjson
+            break
+        fi
+        index=$((index + 1))
+    done
+    IFS=$old_ifs
+}
+
+function wheel::recipes::add_item() {
+    next_screen="Create Item"
+}
+
+function wheel::recipes::delete_item() {
+    next_screen="Delete Item"
+}
+```
+
+__YAML__
+
+``` yaml
+includes:
+- file: recipes.sh
+start: List Items
+screens:
+  Start List:
+    type: msgbox
+    properties:
+      text: "Let's begin a list for you!"
+      height: 5
+      width: 50
+    next: Create Item
+  Create Item:
+    type: form
+    capture_into: current_item
+    properties:
+      items:
+      - name: Name
+        required: true
+        length: 40
+      - name: Description
+        length: 70
+    next: List Items
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::recipes::add_to_list
+      - wheel::handlers::clear_capture
+  Delete Item:
+    type: yesno
+    dialog:
+      colors: true
+    capture_into: current_item.name
+    properties:
+      text: 'Are you sure you want to delete:
+
+      \Zb$state.current_item.name\ZB'
+    next: List Items
+    handlers:
+      capture_into:
+      - wheel::handlers::noop
+      ok:
+      - wheel::recipes::remove_from_list
+      - wheel::recipes::reset
+      - wheel::handlers::ok
+  Update Item:
+    type: form
+    capture_into: current_item
+    dialog:
+      ok-label: Update
+      extra-button: true
+      extra-label: Delete
+    properties:
+      items:
+      - name: Name
+        type: 2
+      - name: Description
+        length: 70
+    next: List Items
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::recipes::add_to_list
+      - wheel::handlers::clear_capture
+      extra:
+      - wheel::recipes::delete_item
+      - wheel::handlers::ok
+  List Items:
+    condition:
+      "!ref": list.items
+    capture_into: selected_item
+    type: hub
+    dialog:
+      extra-button: true
+      extra-label: Add
+      ok-label: Edit
+    properties:
+      items:
+        "!ref": list.items
+    clear_history: true
+    next:
+      "!if":
+        - "!ref": list.items
+        - "Update Item"
+        - "Start List"
+    handlers:
+      capture_into:
+      - wheel::handlers::capture_into
+      - wheel::recipes::select_item
+      extra:
+      - wheel::recipes::reset
+      - wheel::recipes::add_item
+      - wheel::handlers::ok
+```
+
+#### File Selection and Editing
+
+This "copy / paste" recipe can be used to workflow the ability to:
+
+1. select a file
+1. open the file for viewing
+1. edit the file directly
+
+The recipe is a "no code" solution, and can easily be adapted to fit into
+other workflows. For example: the selected file may be provided by the
+controller, or the ability to edit the file can be removed, etc.
+
+As is, the recipe takes advantage of the following:
+
+- `clear_history` in the `Select a File` screen. Control flow is pretty
+explicit in this workflow, so there's no need to track the stack
+- `extra-button` in the `Select a File` to clear the state content
+- Relabeling the dialog buttons
+- Use a controller function for special processing of the selected file
+
+__YAML__
+
+``` yaml
+start: Select a File
+screens:
+  Select a File:
+    type: files
+    capture_into: selected.file
+    clear_history: true
+    dialog:
+      extra-button: true
+      extra-label: Reset
+    properties:
+      text: "$state.selected.file"
+    handlers:
+      ok: wheel::screens::files::select
+      extra: wheel::handlers::clear_capture
+    next: Open File
+  Open File:
+    type: textbox
+    dialog:
+      extra-button: true
+      extra-label: Back
+      ok-label: Edit
+    properties:
+      text: "$state.selected.file"
+    next: Edit File
+    back: Select a File
+  Edit File:
+    type: editor
+    dialog:
+      ok-label: Save
+      cancel-label: Close
+    properties:
+      text: "$state.selected.file"
+    handlers:
+      ok: wheel::screens::editor::save
+    back: Open File
+    next: Open File
+```

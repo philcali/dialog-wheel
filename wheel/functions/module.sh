@@ -31,7 +31,7 @@ function wheel::functions::expand() {
 function wheel::functions::if() {
     local args
     mapfile -t args <<< "$(wheel::json::get "$1" "[]" -c)"
-    if wheel::functions::expand "${args[0]}" 1; then
+    if wheel::functions::expand "${args[0]}" 1 >/dev/null 2>&1; then
         wheel::functions::expand "${args[1]}"
     else
         wheel::functions::expand "${args[2]}"

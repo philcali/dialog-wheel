@@ -9,6 +9,7 @@ setup() {
     . wheel/json/module.sh
     . wheel/state/module.sh
     . wheel/utils/module.sh
+    . wheel/functions/module.sh
 
     DIALOG=("echo" "dialog")
     answer_file=$(mktemp)
