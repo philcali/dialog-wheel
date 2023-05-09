@@ -1,0 +1,218 @@
+version: "1.0.0"
+start: Welcome
+error: Error
+exit: Exit
+includes:
+- directory: examples/todo
+  file: application.sh
+dialog:
+  colors: true
+screens:
+  Welcome:
+    type: msgbox
+    properties:
+      text: "Welcome to the TODO list application!"
+      width: 70
+      height: 5
+    next: TODO Lists
+  Exit:
+    type: yesno
+    properties:
+      text: "Are you sure you want to exit?"
+      width: 70
+      height: 5
+    handlers:
+      ok:
+      - wheel::todo::reset_lists
+      - wheel::recipes::reset
+      - wheel::handlers::ok
+  Error:
+    type: msgbox
+    properties: "There was an unexpected error. Please check the logs"
+    width: 70
+    height: 6
+  Start Lists:
+    type: msgbox
+    properties:
+      text: "Let's start a TODO list!"
+      height: 5
+      width: 50
+    next: Create List
+  Start Items:
+    type: msgbox
+    properties:
+      text: "Let's start the list!"
+      height: 5
+      width: 50
+    next: Create Item
+  Create List:
+    type: form
+    capture_into: current_list
+    properties:
+      items:
+      - name: Name
+        required: true
+        length: 40
+      - name: Description
+        length: 70
+    next: TODO Lists
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::todo::add_to_database
+      - wheel::handlers::clear_capture
+  Delete List:
+    type: yesno
+    capture_into: current_list.name
+    properties:
+      text: 'Are you sure you want to delete:
+
+      \Zb$state.current_list.name\ZB'
+    next: TODO Lists
+    handlers:
+      capture_into:
+      - wheel::handlers::noop
+      ok:
+      - wheel::todo::remove_from_database
+      - wheel::todo::reset_lists
+      - wheel::handlers::ok
+  View List:
+    condition:
+      "!ref":
+        "!ref": selected_list
+    type: hub
+    capture_into: selected_item
+    dialog:
+      extra-button: true
+      extra-label: Add
+      ok-label: Edit
+      cancel-label: Back
+    properties:
+      items:
+        "!ref":
+          "!ref": selected_list
+    clear_history: true
+    next:
+      "!if":
+        - "!ref":
+            "!ref": selected_list
+        - "Update Item"
+        - "Start Items"
+    back: TODO Lists
+    handlers:
+      capture_into:
+      - wheel::handlers::capture_into
+      - wheel::recipes::select_item
+      extra:
+      - wheel::recipes::reset
+      - wheel::recipes::add_item
+      - wheel::handlers::ok
+  Create Item:
+    type: form
+    capture_into: current_item
+    properties:
+      items:
+      - name: Name
+        required: true
+        length: 40
+      - name: Description
+        length: 70
+    next: View List
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::recipes::add_to_list
+      - wheel::handlers::clear_capture
+  Update Item:
+    type: form
+    capture_into: current_item
+    dialog:
+      ok-label: Update
+      extra-button: true
+      extra-label: Delete
+    properties:
+      items:
+      - name: Name
+        type: 2
+      - name: Description
+        length: 70
+    next: View List
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::recipes::add_to_list
+      - wheel::handlers::clear_capture
+      extra:
+      - wheel::recipes::delete_item
+      - wheel::handlers::ok
+  Delete Item:
+    type: yesno
+    capture_into: current_item.name
+    properties:
+      text: 'Are you sure you want to delete:
+
+      \Zb$state.current_item.name\ZB'
+    next: View List
+    handlers:
+      capture_into:
+      - wheel::handlers::noop
+      ok:
+      - wheel::recipes::remove_from_list
+      - wheel::recipes::reset
+      - wheel::handlers::ok
+  Update List:
+    type: form
+    capture_into: current_list
+    dialog:
+      ok-label: Update
+      extra-button: true
+      extra-label: Delete
+    properties:
+      items:
+      - name: Name
+        type: 2
+      - name: Description
+        length: 70
+    next: TODO Lists
+    handlers:
+      capture_into:
+      - wheel::screens::form::save
+      - wheel::todo::add_to_database
+      - wheel::handlers::clear_capture
+      extra:
+      - wheel::todo::delete_list
+      - wheel::handlers::ok
+  TODO Lists:
+    condition:
+      "!ref": lists
+    capture_into: selected_list
+    type: hub
+    dialog:
+      extra-button: true
+      extra-label: Edit
+      ok-label: View
+      cancel-label: Add
+      help-button: true
+      help-label: Cancel
+    properties:
+      items:
+        "!ref": lists
+    clear_history: true
+    next:
+      "!if":
+        - "!ref": lists
+        - "View List"
+        - "Start Lists"
+    handlers:
+      capture_into:
+      - wheel::handlers::capture_into
+      - wheel::todo::select_list
+      extra:
+      - wheel::todo::update_list
+      - wheel::handlers::ok
+      cancel:
+      - wheel::todo::reset_lists
+      - wheel::todo::add_list
+      - wheel::handlers::ok
+      help:
+      - wheel::handlers::cancel
