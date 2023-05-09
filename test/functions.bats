@@ -66,3 +66,11 @@ setup() {
 @test "wheel::functions::eval" {
     assert wheel::functions::eval '["date"]'
 }
+
+@test "wheel::functions::ref" {
+    wheel::state::set "some.one" "Some String"
+    wheel::state::set "some.two" "some.one"
+
+    local actual=$(wheel::functions::ref '{"!ref":"some.two"}')
+    assert [ "Some String" = "$actual" ]
+}

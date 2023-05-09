@@ -66,7 +66,9 @@ function wheel::functions::split() {
 
 function wheel::functions::ref() {
     local arg
-    arg=$(wheel::state::get "$1")
+    local value
+    value=$(wheel::functions::expand "$1" 1) || return 1
+    arg=$(wheel::state::get "$value")
     wheel::functions::expand "$arg" 1
 }
 
