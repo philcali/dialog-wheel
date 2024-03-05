@@ -86,6 +86,7 @@ node in an otherwise expansive decision tree.
 - `dialog`: (optional) subdocument of dialog properties
 - `next`: (optional) string or conditional
 - `back`: (optional) string or conditional
+- `condition`: (optional) conditional
 - `handlers`: (optional) string or array of string handlers
 - `clear_history`: (optional) flag that signals the workflow engine to clear the stack tracking visited nodes.
 
@@ -120,6 +121,54 @@ __YAML__
     properties:
         text: This is just some message notification.
     next: Some Other Page
+```
+
+#### Functions
+
+There are special functions that can be used on screens to conditionalize the workflow behavior.
+At the time of this writing the following fields on a screen support
+interpolating functions:
+
+- `condition`: if "truthy" then the screen renders, otherwise the state machine immediately jumps to `next`
+
+- `next`: can be replaced with a branch evaluation of a condition
+- `back`: can be replaced with a branch evaluation of a condition
+
+The menu type dialogs that support `items` can be replaced with `!ref`'s.
+
+
+#### Reference
+
+Noted by `!ref`, this function will read the contents out of the application state.
+
+``` yaml
+Message:
+    condition:
+        "!ref": some.flag
+    type: msgbox
+    properties:
+        This message only renders if "some.flag" is true.
+```
+
+#### Conditions
+
+Noted by `!if`, `!not`, `!or` and `!and`, these functions will
+allow conditional logic to be used on current application state.
+
+``` yaml
+Message:
+    condition:
+        "!not":
+            "!ref": some.flag
+    type: msgbox
+    properties:
+        This message only renders if "some.flag" is false.
+    next:
+        "!if":
+        - "!not":
+            - "!ref": some.flag
+        - Normal Route
+        - Other Route
 ```
 
 ### Screen Types
@@ -877,7 +926,7 @@ absence of supported "layer two" functionality.
 
 #### List Management
 
-Thie "copy / paste" recipe can be used to workflow the ability to:
+This "copy / paste" recipe can be used to workflow the ability to:
 
 1. manage items in a list
     1. Create
@@ -887,7 +936,7 @@ Thie "copy / paste" recipe can be used to workflow the ability to:
 
 The recipe is a "minimal" code solution, and can easily be adapted to fit
 into other workflows. For example: the conditional render is used
-for demonstration purposes anc can be eliminated.
+for demonstration purposes and can be eliminated.
 
 As is, the recipe demonstrates the controller binding for screen handlers
 and state management. It combines the following:
