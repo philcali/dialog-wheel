@@ -86,13 +86,15 @@ function wheel::app::_run() {
         back_screen=$(wheel::functions::expand "$back_screen")
         wheel::log::info "Displaying screen $CURRENT_SCREEN"
         [ "$clear_history" = "true" ] && wheel::stack::clear
-        wheel::functions::expand "$(wheel::json::get_or_default "$screen" "condition" "")" >/dev/null && {
+        if wheel::functions::expand "$(wheel::json::get_or_default "$screen" "condition" "")" >/dev/null; then
             # Allow trap
+            wheel::state::write_ipc
             wheel::screens::new_screen "$screen" "$answer_file" &
             ACTIVE_DIALOG=$!
             wait $ACTIVE_DIALOG
             returncode=$?
             ACTIVE_DIALOG=""
+            wheel::state::read_ipc
             # dialog does something weird here... if the answer is a spaced arg
             # Then it will quote it "sometimes"... here we account for that
             # Unfortunately this parsing hint needs to be passed to the
@@ -103,7 +105,7 @@ function wheel::app::_run() {
             else
                 value=("$(<"$answer_file")")
             fi
-        }
+        fi
         wheel::log::debug "Screen $CURRENT_SCREEN exits with $returncode, single arg: $single_arg value ${value[*]}"
         case $returncode in
         "$DIALOG_OK")
@@ -159,6 +161,7 @@ function wheel::app::run() {
     wheel::events::set_traps
     local answer_file; answer_file=$(mktemp)
     wheel::events::add_clean_up "rm $answer_file"
+    wheel::events::add_clean_up "wheel::state::clear_ipc"
     wheel::events::add_clean_up "wheel::state::flush"
     wheel::app::_inclusion
     EXIT_SCREEN=$(wheel::json::get "$json_source" "exit")

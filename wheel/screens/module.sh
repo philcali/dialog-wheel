@@ -166,7 +166,7 @@ function wheel::screens::_parse_menu_options() {
         fi
         if [ -n "$item_caps" ] && [ "$2" = "menu" ]; then
             local prefix
-            if [ -n "$(wheel::state::get "$item_caps")" ]; then
+            if [ "$(wheel::state::get "$item_caps")" = "true" ]; then
                 prefix="[X]"
             else
                 prefix="[ ]"

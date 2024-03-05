@@ -2,6 +2,7 @@
 
 APP_STATE="{}"
 OUTPUT_PATH=""
+IPC_STATE=/dev/shm/dialog-wheel-$$-state
 
 function wheel::state::init() {
     local source=$1
@@ -10,6 +11,18 @@ function wheel::state::init() {
 
 function wheel::state::set_output() {
     OUTPUT_PATH=$1
+}
+
+function wheel::state::write_ipc() {
+    echo "$APP_STATE" > $IPC_STATE
+}
+
+function wheel::state::read_ipc() {
+    APP_STATE=$(<$IPC_STATE)
+}
+
+function wheel::state::clear_ipc() {
+    rm -f $IPC_STATE
 }
 
 function wheel::state::flush() {
