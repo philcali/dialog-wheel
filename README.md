@@ -42,49 +42,6 @@ reference a function or a command to replace all calls normally directed to
 program interface. Perhaps in a future release, the calls will use its own
 abstraction, but for now that's an exercise for the reader.
 
-## Conditional Render and Branching Logic
-
-The `dialog-wheel` program will parse special functions to render different
-paths on `next` or `back`.
-
-- `!ref`: pulls data our of the managed application state
-``` yaml
-MyScreen:
-  capture_into: state.boolean
-  type: yesno
-  properties:
-    text: Do you like bananas?
-  handlers:
-    ok: wheel::handlers::cancel
-    cancel:
-    - wheel::handlers::flag
-    - wheel::handlers::cancel
-    capture_into: wheel::handlers::flag
-Confirmed:
-  type: msgbox
-  condition:
-    "!ref": state.boolean
-  properties:
-    text: You did it. Go to the next page
-  next: Another
-Another:
-  type: msgbox
-  properties:
-    text: Just another page
-```
-- `!if`: applies a truth and false path
-``` yaml
-MyScreen:
-  type: msgbox
-  properties:
-    text: Enter next if you want to continue.
-  next:
-    "!if":
-    - "!ref": state.boolean
-    - TruthPage
-    - FalsePage
-```
-
 ## How do I install it?
 
 The example includes a `Dockerfile` for testing the application. If you want
