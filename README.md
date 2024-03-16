@@ -81,7 +81,7 @@ docker run -it --rm --name dialog-wheel dialog-wheel -h
 
 The `help` should print below
 ```
-Usage main.sh - v1.0.0: Invoke a dialog wheel
+Usage main.sh - v1.1.0: Invoke a dialog wheel
 Example usage: main.sh [-h] [-v] [-d state.json] [-o output.json] [-l app.log] [-L TRACE|DEBUG|INFO|WARN|ERROR|FATAL] [-s START_SCREEN] [-i workflow.json] [< workflow.json]
   -o, --state-output: Supply an output path for JSON state data (defaults to fd 3)
   -d, --state-input:  Supply a JSON file representative of existing state data (defaults to none)
